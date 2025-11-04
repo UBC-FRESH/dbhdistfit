@@ -1,0 +1,43 @@
+# dbhdistfit Readiness Roadmap
+
+This roadmap tracks the milestones required to deliver a production-ready release. It will evolve as
+requirements firm up and is intended to stay in sync with day-to-day development.
+
+## Phase 0 — Foundations (current)
+- [x] Establish repo scaffolding, licensing, packaging metadata, and CI skeleton.
+- [x] Bootstrap core package layout (distributions, fitting, workflows, CLI).
+- [x] Populate extended distribution registry (28+ GB family members) with tests.
+- [ ] Document coding standards, contribution flow, and review checklist.
+
+## Phase 1 — Core Functionality
+- [ ] Implement size-biased HPS workflow parity with reference manuscripts.
+- [ ] Implement censored/two-stage workflow with reproducible baselines.
+- [ ] Add goodness-of-fit metrics (AICc, chi-square, residual diagnostics).
+- [ ] Provide DataLad dataset hooks for sample tallies and automate fetch in CLI.
+- [ ] Flesh out Python API docs and examples (Python scripts + notebooks).
+
+## Phase 2 — Extensibility & Interfaces
+- [ ] Implement user-defined distribution registration (entry points + config).
+- [ ] Deliver Typer CLI parity with FHOPS feature set (fit, compare, report commands).
+- [ ] Build R `dbhdistfitr` wrapper with unit tests and pkgdown-ready docs.
+- [ ] Add CLI/GUI example scripts and integrate with FHOPS-style logging UX.
+
+## Phase 3 — Quality & Release Readiness
+- [ ] Expand unit and property-based tests; add golden fixtures for known tallies.
+- [ ] Integrate hypothesis-based validation and numerical stability checks.
+- [ ] Complete Sphinx documentation (how-tos, theory, API reference).
+- [ ] Configure Read the Docs build + link to GitHub releases.
+- [ ] Add benchmarking harness for long-run fitting workloads.
+
+## Phase 4 — Community & Deployment
+- [ ] Prepare v0.1.0 release notes and changelog.
+- [ ] Publish package to PyPI; automate release workflow.
+- [ ] Finalise CRAN submission plan for `dbhdistfitr`.
+- [ ] Draft contributor guide, code of conduct, and issue templates.
+- [ ] Announce public release (blog post, mailing lists).
+
+## Backlog & Ideas
+- [ ] Investigate GPU-accelerated fitting for large tally batches.
+- [ ] Evaluate Bayesian fitting backends (PyMC, Stan) for hierarchical modelling.
+- [ ] Add interactive visualization module for comparing candidate PDFs.
+- [ ] Explore integration with FHOPS web components for shared dashboards.

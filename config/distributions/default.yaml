@@ -1,0 +1,15 @@
+metadata:
+  title: "Default distribution registry"
+  version: "0.1.0"
+  description: "Baseline distributions packaged with dbhdistfit."
+distributions:
+  - name: weibull
+    module: dbhdistfit.distributions
+    callable: register_distribution
+    parameters: ["a", "beta", "s"]
+    notes: "Complete-form Weibull distribution."
+  - name: gamma
+    module: dbhdistfit.distributions
+    callable: register_distribution
+    parameters: ["beta", "p", "s"]
+    notes: "Gamma distribution with scaling parameter."

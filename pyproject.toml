@@ -1,0 +1,94 @@
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dbhdistfit"
+description = "Tools for fitting diameter-at-breast-height distributions to forest inventory tallies."
+authors = [{ name = "UBC FRESH Lab", email = "fresh.lab@ubc.ca" }]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+keywords = ["forestry", "statistics", "dbh", "distribution-fitting"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+  "numpy>=1.23",
+  "scipy>=1.10",
+  "pandas>=1.5",
+  "lmfit>=1.2",
+  "typer[all]>=0.12",
+  "rich>=13.0",
+  "pydantic>=2.5",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "pytest-cov>=4.1",
+  "hypothesis>=6.88",
+  "mypy>=1.6",
+  "ruff>=0.1.4",
+  "sphinx>=7.1",
+  "myst-parser>=2.0",
+  "sphinx-autodoc-typehints>=1.24",
+  "sphinx-copybutton>=0.5",
+  "nbsphinx>=0.9",
+  "jupyter>=1.0",
+]
+cli = ["click>=8.1"]
+r = ["reticulate"]  # placeholder for R-side integration metadata
+
+[project.scripts]
+dbhdistfit = "dbhdistfit.cli:main"
+
+[tool.hatch.version]
+path = "src/dbhdistfit/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dbhdistfit"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra --cov=dbhdistfit --cov-report=term-missing"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["dbhdistfit"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "N", "C4"]
+ignore = ["S101"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+show_error_codes = true
+warn_unused_configs = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = ["src"]
+
+[tool.sphinx]
+builder = "html"
+warning_is_error = false

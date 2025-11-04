@@ -1,0 +1,40 @@
+# Python tooling
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# Build artefacts
+build/
+dist/
+*.egg-info/
+
+# Documentation
+docs/_build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data / experiments
+data/
+datasets/
+tmp/
+
+# Editors
+.DS_Store
+*.swp
+.idea/
+.vscode/
