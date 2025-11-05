@@ -63,6 +63,24 @@ print(best.distribution, best.parameters)
 weights, and auto-generates starting values. Override the defaults through `FitConfig` for
 specialised scenarios.
 
+### Reference Fit (BC PSP 4000002-PSP1)
+
+Using the public bundle prepared in {doc}`howto/hps_dataset`, `fit_hps_inventory`
+identifies the Weibull distribution as the best fit for plot `4000002_PSP1_v1_p1`
+with BAF 12. The regression test in `tests/test_hps_parity.py` locks these targets:
+
+| Metric | Value |
+| --- | --- |
+| Distribution | `weibull` |
+| RSS | `4.184770291568501e+07` |
+| Parameters | `a=2.762844978640213`, `beta=13.778112123083137`, `s=69732.71124303175` |
+
+Re-run the check locally with:
+
+```bash
+pytest tests/test_hps_parity.py
+```
+
 ## Diagnostics
 
 - Inspect `result.diagnostics["residuals"]` for shape or bias.

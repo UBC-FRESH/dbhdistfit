@@ -91,3 +91,4 @@ Outputs:
 - [x] Scripted pipeline (`scripts/prepare_hps_dataset.py`) with caching and binning controls.
 - [x] Pytest fixtures covering selection + tally logic (`tests/fixtures/hps`).
 - [x] PSP sample bundle committed under `examples/hps_baf12` with manifest and provenance notes.
+- [x] Regression guard for the reference Weibull fit (`tests/test_hps_parity.py`).
