@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 
 import typer
@@ -132,6 +133,7 @@ def fetch_reference_data(
 
     try:  # pragma: no cover - optional dependency execution path
         from datalad import api as datalad_api
+        from datalad.support.exceptions import IncompleteResultsError
     except ImportError as exc:  # pragma: no cover
         console.print(
             "[red]DataLad is not installed.[/red] Install it or rerun with --dry-run for"
@@ -144,6 +146,43 @@ def fetch_reference_data(
 
     output.mkdir(parents=True, exist_ok=True)
     console.print("\n[green]Installing dataset via DataLad...[/green]")
-    datalad_api.install(path=str(output), source=dataset_url)
-    datalad_api.get(str(output))
+    try:
+        install_results = datalad_api.install(
+            path=str(output),
+            source=dataset_url,
+            on_failure="stop",
+            result_renderer="disabled",
+            return_type="list",
+        )
+    except IncompleteResultsError as exc:  # pragma: no cover
+        console.print(f"[red]Installation failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    _check_datalad_results("install", install_results)
+
+    console.print("[green]Downloading dataset content...[/green]")
+    try:
+        get_results = datalad_api.get(
+            path=str(output),
+            on_failure="stop",
+            result_renderer="disabled",
+            return_type="list",
+        )
+    except IncompleteResultsError as exc:  # pragma: no cover
+        console.print(f"[red]Download failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    _check_datalad_results("get", get_results)
     console.print("[green]Dataset fetched successfully.[/green]")
+
+
+def _check_datalad_results(stage: str, results: Iterable[dict]) -> None:
+    issues = []
+    for record in results:
+        status = record.get("status")
+        if status not in {"ok", "notneeded"}:
+            message = record.get("message", "")
+            issues.append(f"{status}: {message}")
+    if issues:
+        console.print(f"[red]{stage.capitalize()} encountered issues:[/red]\n" + "\n".join(issues))
+        raise typer.Exit(code=1)
