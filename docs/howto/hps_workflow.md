@@ -110,6 +110,20 @@ table.
    Figure 1 — Size-biased control vs. weighted `dbhdistfit` curves for the manuscript meta-plots. The
    dashed line shows residuals on the HPS tally scale.
 
+### Censored / Two-Stage Baseline
+
+The reference notebook also aggregates the manuscript dataset into a censored meta-plot (DBH ≥ 20 cm)
+and fits the two-stage workflow via `fit_censored_inventory`. The exported table
+(`docs/_static/reference_hps_censored_table.csv`) records RSS, AICc, chi-square, and parameter values
+for each candidate distribution.
+
+.. figure:: /_static/reference_hps_censored.png
+   :alt: Censored meta-plot fits using the two-stage workflow.
+   :width: 80%
+
+   Figure 2 — Censored (DBH ≥ 20 cm) stand-table data with fitted Weibull and Gamma curves using the
+   two-stage workflow. Residual lines highlight the agreement on the truncated support.
+
 ## Diagnostics
 
 - Inspect `result.diagnostics["residuals"]` for shape or bias.
