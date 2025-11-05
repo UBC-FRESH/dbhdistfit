@@ -10,9 +10,10 @@ requirements firm up and is intended to stay in sync with day-to-day development
 - [x] Document coding standards, contribution flow, and review checklist.
 
 ## Phase 1 — Core Functionality
-- [ ] Implement size-biased HPS workflow parity with reference manuscripts.
+- [x] Implement size-biased HPS workflow parity with reference manuscripts.
+- [ ] Automate figure/table regeneration for reference HPS parity (export assets from parity notebook into `docs/`).
 - [ ] Implement censored/two-stage workflow with reproducible baselines.
-- [ ] Add goodness-of-fit metrics (AICc, chi-square, residual diagnostics).
+- [ ] Add goodness-of-fit metrics (AICc, chi-square, residual diagnostics) to parity reports and docs.
 - [ ] Provide DataLad dataset hooks for sample tallies and automate fetch in CLI.
 - [ ] Flesh out Python API docs and examples (Python scripts + notebooks).
 
