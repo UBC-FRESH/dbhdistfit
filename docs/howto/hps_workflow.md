@@ -91,6 +91,15 @@ outlined in the EarthArXiv manuscript (Paradis, 2025). Run the notebook (or
 `pytest tests/test_censored_workflow.py`) to verify the gamma fit parameters recorded in the
 summary table.
 
+### Parity Summary
+
+- Regression tests `tests/test_hps_parity.py` and `tests/test_censored_workflow.py` lock the
+  manuscript-aligned Weibull and censored gamma fits.
+- `tests/test_cli.py::test_fit_hps_command_outputs_weibull_first` exercises the Typer CLI against
+  the PSP tallies to ensure the command-line workflow mirrors the Python API.
+- `examples/hps_parity_demo.ipynb` reproduces the figures referenced in the EarthArXiv manuscript
+  and provides tabulated parameter summaries for reviewers.
+
 ## Diagnostics
 
 - Inspect `result.diagnostics["residuals"]` for shape or bias.
