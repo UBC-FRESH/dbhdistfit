@@ -31,6 +31,11 @@ extensions = [
     "sphinx_rtd_theme",
 ]
 
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+]
+
 templates_path = ["_templates"]
 exclude_patterns: list[str] = ["_build", "Thumbs.db", ".DS_Store"]
 
