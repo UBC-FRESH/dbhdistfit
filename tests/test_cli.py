@@ -1,7 +1,12 @@
+import re
+
+import pandas as pd
+import pytest
 from typer.testing import CliRunner
 
 from dbhdistfit import __version__
 from dbhdistfit.cli import app
+from dbhdistfit.workflows import fit_hps_inventory
 
 runner = CliRunner()
 
@@ -33,4 +38,23 @@ def test_fit_hps_command_outputs_weibull_first() -> None:
     assert "weibull" in result.stdout
     assert "gamma" in result.stdout
     assert result.stdout.index("weibull") < result.stdout.index("gamma")
-    assert "41847702.9157" in result.stdout
+
+    def extract(metric: str) -> float:
+        pattern = rf"│\s*{metric}\s*│\s*([0-9]+\.[0-9]+)"
+        match = re.search(pattern, result.stdout)
+        assert match, f"{metric} row missing from CLI output"
+        return float(match.group(1))
+
+    observed = {dist: extract(dist) for dist in ("weibull", "gamma")}
+
+    data = pd.read_csv("examples/hps_baf12/4000002_PSP1_v1_p1.csv")
+    expected_results = fit_hps_inventory(
+        data["dbh_cm"].to_numpy(),
+        data["tally"].to_numpy(),
+        baf=12.0,
+        distributions=("weibull", "gamma"),
+    )
+    expected = {res.distribution: res.gof["rss"] for res in expected_results}
+
+    for dist in expected:
+        assert observed[dist] == pytest.approx(expected[dist], rel=1e-6)
