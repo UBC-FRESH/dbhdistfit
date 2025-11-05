@@ -135,7 +135,10 @@ def fetch_reference_data(
     except ImportError as exc:  # pragma: no cover
         console.print(
             "[red]DataLad is not installed.[/red] Install it or rerun with --dry-run for"
-            ' instructions. For pip users, install via `pip install "datalad[full]"`.'
+            " instructions. For pip installs try:\n"
+            '  pip install --upgrade "dbhdistfit[data]"\n'
+            '  pip install "datalad[full]"\n'
+            '  pip install -e ".[data]"  # from a source checkout'
         )
         raise typer.Exit(code=1) from exc
 

@@ -26,7 +26,7 @@ dependencies = [
   "scipy>=1.10",
   "pandas>=1.5",
   "lmfit>=1.2",
-  "typer[all]>=0.12",
+  "typer[standard]>=0.12",
   "rich>=13.0",
   "pydantic>=2.5",
 ]
