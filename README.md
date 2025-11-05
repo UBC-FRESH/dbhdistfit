@@ -13,6 +13,26 @@ size-bias corrections, left/right censoring, and extensible distribution librari
 - Reproducible examples (Jupyter, Python scripts, bash) linked to DataLad managed tallies.
 - Sphinx documentation with theory notes, API reference, and worked examples.
 
+## Relationship to other tools
+`dbhdistfit` complements earlier diameter-distribution toolkits—most notably the R package
+[`ForestFit`](https://cran.r-project.org/package=ForestFit)—by focusing on workflow integration and
+cross-language accessibility:
+
+- **Workflow-first design.** Horizontal point sampling (HPS) weighting, censored workflows, and
+  parity datasets are bundled as ready-to-run pipelines rather than standalone distribution
+  routines.
+- **Python ecosystem integration.** A Typer CLI, pandas-friendly API, and forthcoming reticulate
+  bridge allow the same scripts to run in notebooks, batch jobs, or mixed Python/R projects.
+- **Reproducible data packaging.** DataLad-backed reference datasets and CLI bootstrap commands make
+  it easy to pull the manuscript tallies or swap in project-specific inventories.
+- **Transparent differentiation.** We actively track ideas from ForestFit and related literature
+  (finite mixtures, piecewise PDFs, JSB family support). Candidate imports are logged in
+  `candidate-import-from-ForestFit-features.md` so that upstream contributions remain visible while
+  we extend the Python implementation.
+
+The goal is to interoperate with ForestFit users rather than replace that package; future releases
+will surface mixture and piecewise models inspired by the same body of research.
+
 ## Project Layout
 ```
 src/dbhdistfit/    # Core Python package (distributions, weighting, fitting, workflows)
