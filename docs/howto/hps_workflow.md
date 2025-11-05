@@ -85,11 +85,11 @@ pytest tests/test_hps_parity.py
 
 ### Censored Meta-Plot Demo
 
-For a pooled view, the notebook `examples/hps_parity_demo.ipynb` aggregates every PSP sample,
-censors stems below 9 cm, and fits the censored workflow—again matching the censored analysis
-outlined in the EarthArXiv manuscript (Paradis, 2025). Run the notebook (or
-`pytest tests/test_censored_workflow.py`) to verify the gamma fit parameters recorded in the
-summary table.
+For a pooled view, the notebook `examples/hps_bc_psp_demo.ipynb` aggregates the public BC PSP files,
+censors stems below 9 cm, and fits the censored workflow. This serves as a deployment example on new
+data rather than a reproduction of the manuscript figures. Run the notebook (or
+`pytest tests/test_censored_workflow.py`) to verify the gamma fit parameters recorded in the summary
+table.
 
 ### Parity Summary
 
@@ -97,8 +97,9 @@ summary table.
   manuscript-aligned Weibull and censored gamma fits.
 - `tests/test_cli.py::test_fit_hps_command_outputs_weibull_first` exercises the Typer CLI against
   the PSP tallies to ensure the command-line workflow mirrors the Python API.
-- `examples/hps_parity_demo.ipynb` reproduces the figures referenced in the EarthArXiv manuscript
-  and provides tabulated parameter summaries for reviewers.
+- `examples/hps_bc_psp_demo.ipynb` demonstrates the workflow on the public BC PSP dataset, while
+  `examples/hps_parity_reference.ipynb` is reserved for future reproduction against the manuscript
+  dataset housed in `tmp/dbhdistfit-papers/dbhdistfit-hps/`.
 
 ## Diagnostics
 
