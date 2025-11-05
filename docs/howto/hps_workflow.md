@@ -67,3 +67,5 @@ specialised scenarios.
 - Expose distribution filters and parameter previews in the CLI.
 - Add worked examples for censored inventories and DataLad-backed datasets.
 - Integrate notebook tutorials mirroring the published reproducibility bundles.
+- Prepare a FAIR HPS dataset bundle (see {doc}`howto/hps_dataset`) sourced from the BC
+  PSP compilations to support end-to-end parity tests.
