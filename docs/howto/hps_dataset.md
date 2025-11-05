@@ -68,6 +68,18 @@ Key options:
 - `--status L --status I`: define which tree status codes count as “live”.
 - `--dry-run`: inspect how many plots would be produced without writing files.
 
+### DataLad shortcut
+
+If you prefer to mirror the manuscript dataset directly, the CLI exposes a helper that prints the
+DataLad commands required to install the reference data:
+
+```bash
+dbhdistfit fetch-reference-data --dry-run
+```
+
+Run with `--no-dry-run` (and a working DataLad installation) to automatically install the dataset into
+the specified output directory.
+
 ### Sample bundle
 
 The repository ships a small bundle generated with:

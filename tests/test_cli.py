@@ -58,3 +58,11 @@ def test_fit_hps_command_outputs_weibull_first() -> None:
 
     for dist in expected:
         assert observed[dist] == pytest.approx(expected[dist], rel=1e-6)
+
+
+def test_fetch_reference_data_dry_run_message() -> None:
+    result = runner.invoke(app, ["fetch-reference-data"])  # default dry-run
+    assert result.exit_code == 0
+    assert "reference dataset" in result.stdout.lower()
+    assert "dbhdistfit-data" in result.stdout
+    assert "dry-run" in result.stdout.lower()

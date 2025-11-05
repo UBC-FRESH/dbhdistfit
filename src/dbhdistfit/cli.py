@@ -23,6 +23,29 @@ DBH_FILE_ARGUMENT = typer.Argument(
 )
 BAF_OPTION = typer.Option(..., "--baf", help="Basal area factor used for the HPS tally.")
 
+REFERENCE_DATA_OUTPUT = Path("reference-data")
+REFERENCE_DATA_URL = "https://github.com/UBC-FRESH/dbhdistfit-data.git"
+
+OUTPUT_OPTION = typer.Option(
+    REFERENCE_DATA_OUTPUT,
+    "--output",
+    help="Destination directory for the reference dataset.",
+)
+
+DATASET_OPTION = typer.Option(
+    REFERENCE_DATA_URL,
+    "--dataset-url",
+    help="DataLad-compatible dataset URL to install.",
+    show_default=False,
+)
+
+DRY_RUN_OPTION = typer.Option(
+    True,
+    "--dry-run/--no-dry-run",
+    help="When set, only prints the commands without executing them.",
+    show_default=True,
+)
+
 
 @app.callback(invoke_without_command=True)
 def cli_callback(
@@ -78,3 +101,46 @@ def main_entry() -> None:
 
 def main() -> None:  # pragma: no cover - console entry
     main_entry()
+
+
+@app.command()
+def fetch_reference_data(
+    output: Path = OUTPUT_OPTION,
+    dataset_url: str = DATASET_OPTION,
+    dry_run: bool = DRY_RUN_OPTION,
+) -> None:
+    """Fetch the manuscript reference dataset via DataLad (when available)."""
+
+    console.print(
+        "[bold]Reference Dataset Fetch[/bold]\n"
+        "This command bootstraps the manuscript dataset used in the parity notebooks.\n"
+        "A DataLad installation is optional but recommended for provenance tracking."
+    )
+    console.print(
+        f"\nDataset URL : [cyan]{dataset_url}[/cyan]\nDestination : [cyan]{output}[/cyan]"
+    )
+
+    if dry_run:
+        console.print(
+            "\nDry-run mode: no commands were executed.\n"
+            "To perform the download locally, rerun with `--no-dry-run` after installing"
+            " DataLad, e.g.\n"
+            f"  datalad install --source {dataset_url} {output}\n"
+            f"  datalad get {output}\n"
+        )
+        return
+
+    try:  # pragma: no cover - optional dependency execution path
+        from datalad import api as datalad_api
+    except ImportError as exc:  # pragma: no cover
+        console.print(
+            "[red]DataLad is not installed.[/red] Install it or rerun with --dry-run for"
+            " instructions."
+        )
+        raise typer.Exit(code=1) from exc
+
+    output.mkdir(parents=True, exist_ok=True)
+    console.print("\n[green]Installing dataset via DataLad...[/green]")
+    datalad_api.install(path=str(output), source=dataset_url)
+    datalad_api.get(str(output))
+    console.print("[green]Dataset fetched successfully.[/green]")
