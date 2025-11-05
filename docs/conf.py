@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -41,10 +40,10 @@ autosummary_generate = True
 autodoc_typehints = "description"
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", {}),
-    "numpy": ("https://numpy.org/doc/stable/", {}),
-    "scipy": ("https://docs.scipy.org/doc/scipy/", {}),
-    "pandas": ("https://pandas.pydata.org/docs/", {}),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
 }
 
 todo_include_todos = True
