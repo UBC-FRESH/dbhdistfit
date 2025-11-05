@@ -122,12 +122,14 @@ table.
 - For a pure-Python walkthrough (no notebooks), see the
   [programmatic HPS guide](hps_api.md).
 
-.. figure:: /_static/reference_hps_parity.png
-   :alt: Comparison of size-biased and weighted fits for the manuscript meta-plots.
-   :width: 100%
+```{figure} ../_static/reference_hps_parity.png
+:name: fig-hps-parity
+:alt: Comparison of size-biased and weighted fits for the manuscript meta-plots.
+:width: 100%
 
-   Figure 1 — Size-biased control vs. weighted `dbhdistfit` curves for the manuscript meta-plots. The
-   dashed line shows residuals on the HPS tally scale.
+Figure 1 — Size-biased control vs. weighted `dbhdistfit` curves for the manuscript meta-plots. The
+dashed line shows residuals on the HPS tally scale.
+```
 
 ### Censored / Two-Stage Baseline
 
@@ -136,12 +138,14 @@ and fits the two-stage workflow via `fit_censored_inventory`. The exported table
 (`docs/_static/reference_hps_censored_table.csv`) records RSS, AICc, chi-square, and parameter values
 for each candidate distribution.
 
-.. figure:: /_static/reference_hps_censored.png
-   :alt: Censored meta-plot fits using the two-stage workflow.
-   :width: 80%
+```{figure} ../_static/reference_hps_censored.png
+:name: fig-hps-censored
+:alt: Censored meta-plot fits using the two-stage workflow.
+:width: 80%
 
-   Figure 2 — Censored (DBH ≥ 20 cm) stand-table data with fitted Weibull and Gamma curves using the
-   two-stage workflow. Residual lines highlight the agreement on the truncated support.
+Figure 2 — Censored (DBH ≥ 20 cm) stand-table data with fitted Weibull and Gamma curves using the
+two-stage workflow. Residual lines highlight the agreement on the truncated support.
+```
 
 ## Diagnostics
 
