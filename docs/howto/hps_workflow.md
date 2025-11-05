@@ -33,6 +33,14 @@ dbhdistfit fit-hps data/hps_tally.csv --baf 2.0
 
 Pass additional `--distribution` options (planned) to try alternative PDFs as the CLI evolves.
 
+To explore the public PSP example bundle prepared with
+`scripts/prepare_hps_dataset.py`, start with one of the manifests in
+`examples/hps_baf12`:
+
+```bash
+dbhdistfit fit-hps examples/hps_baf12/4000002_PSP1_v1_p1.csv --baf 12
+```
+
 ## Python API Example
 
 ```python
@@ -67,5 +75,5 @@ specialised scenarios.
 - Expose distribution filters and parameter previews in the CLI.
 - Add worked examples for censored inventories and DataLad-backed datasets.
 - Integrate notebook tutorials mirroring the published reproducibility bundles.
-- Prepare a FAIR HPS dataset bundle (see {doc}`howto/hps_dataset`) sourced from the BC
-  PSP compilations to support end-to-end parity tests.
+- Expand FAIR dataset coverage (see {doc}`howto/hps_dataset`) with additional PSP plots and
+  censored variants to support end-to-end parity tests.
