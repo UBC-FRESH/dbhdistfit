@@ -77,11 +77,14 @@ DataLad commands required to install the reference data:
 dbhdistfit fetch-reference-data --dry-run
 ```
 
-Run with `--no-dry-run` (and a working DataLad installation) to automatically install the dataset into
-the specified output directory. If DataLad is not present:
+Run with `--no-dry-run` (and a working DataLad installation) to automatically install the dataset.
+If DataLad is not present:
 
 - From a source checkout, use `pip install -e ".[data]"` to pull in the optional extra.
 - From PyPI, use `pip install --upgrade "dbhdistfit[data]"` (which installs `datalad[full]`).
+
+The command also attempts to enable the `arbutus-s3` sibling by default. Pass
+`--enable-remote ""` to skip, or another sibling name if your configuration differs.
 
 ### Sample bundle
 

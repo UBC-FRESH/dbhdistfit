@@ -109,9 +109,24 @@ def fetch_reference_data(
     output: Path = OUTPUT_OPTION,
     dataset_url: str = DATASET_OPTION,
     dry_run: bool = DRY_RUN_OPTION,
+    enable_remote: str = typer.Option(
+        "arbutus-s3",
+        "--enable-remote",
+        help="Name of the DataLad sibling to enable after install (blank to skip).",
+        show_default=True,
+    ),
 ) -> None:
     """Fetch the manuscript reference dataset via DataLad (when available)."""
 
+    _fetch_reference_data(Path(output), dataset_url, dry_run, enable_remote)
+
+
+def _fetch_reference_data(
+    output: Path,
+    dataset_url: str,
+    dry_run: bool,
+    enable_remote: str | None,
+) -> None:
     console.print(
         "[bold]Reference Dataset Fetch[/bold]\n"
         "This command bootstraps the manuscript dataset used in the parity notebooks.\n"
@@ -127,7 +142,9 @@ def fetch_reference_data(
             "To perform the download locally, rerun with `--no-dry-run` after installing"
             " DataLad, e.g.\n"
             f"  datalad install --source {dataset_url} {output}\n"
-            f"  datalad get {output}\n"
+            f"  datalad get {output} --recursive\n"
+            f"  datalad siblings --dataset {output}\n"
+            f"  datalad siblings --dataset {output} --enabled\n"
         )
         return
 
@@ -160,6 +177,19 @@ def fetch_reference_data(
 
     _check_datalad_results("install", install_results)
 
+    remote_name = (enable_remote or "").strip()
+    if remote_name:
+        console.print(f"[green]Enabling remote '{remote_name}'...[/green]")
+        siblings_results = datalad_api.siblings(
+            action="enable",
+            dataset=str(output),
+            name=remote_name,
+            on_failure="ignore",
+            result_renderer="disabled",
+            return_type="list",
+        )
+        _check_datalad_results("enable remote", siblings_results, fatal=False)
+
     console.print("[green]Downloading dataset content...[/green]")
     try:
         get_results = datalad_api.get(
@@ -167,6 +197,7 @@ def fetch_reference_data(
             on_failure="stop",
             result_renderer="disabled",
             return_type="list",
+            recursive=True,
         )
     except IncompleteResultsError as exc:  # pragma: no cover
         console.print(f"[red]Download failed:[/red] {exc}")
@@ -176,7 +207,12 @@ def fetch_reference_data(
     console.print("[green]Dataset fetched successfully.[/green]")
 
 
-def _check_datalad_results(stage: str, results: Iterable[dict]) -> None:
+def _check_datalad_results(
+    stage: str,
+    results: Iterable[dict],
+    *,
+    fatal: bool = True,
+) -> None:
     issues = []
     for record in results:
         status = record.get("status")
@@ -184,5 +220,9 @@ def _check_datalad_results(stage: str, results: Iterable[dict]) -> None:
             message = record.get("message", "")
             issues.append(f"{status}: {message}")
     if issues:
-        console.print(f"[red]{stage.capitalize()} encountered issues:[/red]\n" + "\n".join(issues))
-        raise typer.Exit(code=1)
+        colour = "red" if fatal else "yellow"
+        console.print(
+            f"[{colour}]{stage.capitalize()} encountered issues:[/{colour}]\n" + "\n".join(issues)
+        )
+        if fatal:
+            raise typer.Exit(code=1)
