@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 import numpy as np
@@ -268,8 +268,109 @@ def _normalise_parameters(params: dict[str, float]) -> dict[str, float]:
     return cleaned
 
 
+def mixture_pdf(
+    x: ArrayLike,
+    components: Sequence[MixtureComponentFit],
+) -> np.ndarray:
+    """Evaluate the PDF of a fitted mixture at points ``x``."""
+    points = np.asarray(x, dtype=float)
+    pdf_values = np.zeros_like(points, dtype=float)
+    for component in components:
+        dist = get_distribution(component.name)
+        pdf_values += component.weight * dist.pdf(
+            points, _normalise_parameters(component.parameters)
+        )
+    return pdf_values
+
+
+def mixture_cdf(
+    x: ArrayLike,
+    components: Sequence[MixtureComponentFit],
+) -> np.ndarray:
+    """Evaluate the mixture CDF at points ``x``."""
+    points = np.asarray(x, dtype=float)
+    cdf_values = np.zeros_like(points, dtype=float)
+    for component in components:
+        dist = get_distribution(component.name)
+        if dist.cdf is not None:
+            cdf_values += component.weight * dist.cdf(
+                points, _normalise_parameters(component.parameters)
+            )
+        else:
+            cdf_values += component.weight * _numeric_cdf(points, dist.name, component.parameters)
+    return np.clip(cdf_values, 0.0, 1.0)
+
+
+def sample_mixture(
+    size: int,
+    components: Sequence[MixtureComponentFit],
+    *,
+    random_state: int | None = None,
+) -> np.ndarray:
+    """Draw random samples from a fitted mixture."""
+    rng = np.random.default_rng(random_state)
+    weights = np.array([component.weight for component in components], dtype=float)
+    if not np.isclose(np.sum(weights), 1.0):
+        raise ValueError("Component weights must sum to one.")
+    if np.any(weights < 0):
+        raise ValueError("Component weights must be non-negative.")
+    choices = rng.choice(len(components), size=size, p=weights)
+    samples = np.empty(size, dtype=float)
+    for idx, component in enumerate(components):
+        count = int(np.sum(choices == idx))
+        if count == 0:
+            continue
+        dist = get_distribution(component.name)
+        samples[choices == idx] = _sample_from_distribution(
+            dist.name, count, component.parameters, rng
+        )
+    return samples
+
+
+def _sample_from_distribution(
+    name: str,
+    size: int,
+    params: Mapping[str, float],
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Sample from a known distribution using numpy or scipy helpers."""
+    name_lower = name.lower()
+    if name_lower == "gamma":
+        shape = params["p"]
+        scale = params["beta"]
+        return rng.gamma(shape=shape, scale=scale, size=size)
+    if name_lower == "weibull":
+        shape = params["a"]
+        scale = params["beta"]
+        return scale * np.power(-np.log(rng.random(size)), 1.0 / shape)
+    message = (
+        f"Sampling not implemented for distribution '{name}'. "
+        "Consider overriding _sample_from_distribution."
+    )
+    raise NotImplementedError(message)
+
+
+def _numeric_cdf(points: np.ndarray, name: str, params: Mapping[str, float]) -> np.ndarray:
+    if name.lower() == "gamma":
+        from scipy.stats import gamma as scipy_gamma
+
+        shape = params["p"]
+        scale = params["beta"]
+        return scipy_gamma.cdf(points, shape, scale=scale)
+    if name.lower() == "weibull":
+        from scipy.stats import weibull_min
+
+        shape = params["a"]
+        scale = params["beta"]
+        return weibull_min.cdf(points, shape, scale=scale)
+    raise NotImplementedError(f"Numerical CDF not implemented for distribution '{name}'.")
+
+
 __all__ = [
     "MixtureComponentSpec",
     "fit_mixture_grouped",
     "fit_mixture_samples",
+    "mixture_pdf",
+    "mixture_cdf",
+    "sample_mixture",
 ]

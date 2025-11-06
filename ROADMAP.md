@@ -23,7 +23,7 @@ requirements firm up and is intended to stay in sync with day-to-day development
 - [x] Catalogue ForestFit capabilities and track candidate imports in
       `candidate-import-from-ForestFit-features.md`.
 - [x] Implement user-defined distribution registration (entry points + config).
-- [ ] Design and prototype finite-mixture fitting (starting with two-component Weibull/Gamma EM).
+- [x] Design and prototype finite-mixture fitting (starting with two-component Weibull/Gamma EM).
 - [ ] Implement mixture distribution utilities (density/CDF/sampling) for fitted components.
 - [ ] Integrate grouped-sample EM estimators for key distributions (Weibull, JSB, Birnbaum–Saunders).
 - [ ] Add Johnson SB / Generalised Secant family support to the distribution registry.

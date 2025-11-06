@@ -256,7 +256,14 @@ def fit_inventory(
     return results
 
 
-from .mixture import MixtureComponentSpec, fit_mixture_grouped, fit_mixture_samples  # noqa: E402
+from .mixture import (  # noqa: E402
+    MixtureComponentSpec,
+    fit_mixture_grouped,
+    fit_mixture_samples,
+    mixture_cdf,
+    mixture_pdf,
+    sample_mixture,
+)
 
 __all__ = [
     "FitConfig",
@@ -265,4 +272,7 @@ __all__ = [
     "MixtureComponentSpec",
     "fit_mixture_grouped",
     "fit_mixture_samples",
+    "mixture_pdf",
+    "mixture_cdf",
+    "sample_mixture",
 ]

@@ -5,6 +5,9 @@ from dbhdistfit.fitting import (
     MixtureComponentSpec,
     fit_mixture_grouped,
     fit_mixture_samples,
+    mixture_cdf,
+    mixture_pdf,
+    sample_mixture,
 )
 
 
@@ -30,6 +33,12 @@ def test_fit_mixture_samples_gamma() -> None:
     weights = np.array([component.weight for component in result.components])
     assert np.isclose(weights.sum(), 1.0)
     assert np.all(weights > 0)
+    pdf_val = mixture_pdf([5.0], result.components)[0]
+    assert pdf_val > 0
+    cdf_val = mixture_cdf([5.0], result.components)[0]
+    assert 0 <= cdf_val <= 1
+    samples = sample_mixture(50, result.components, random_state=42)
+    assert samples.shape == (50,)
 
 
 def test_fit_mixture_grouped_errors() -> None:
