@@ -24,11 +24,15 @@ requirements firm up and is intended to stay in sync with day-to-day development
       `candidate-import-from-ForestFit-features.md`.
 - [x] Implement user-defined distribution registration (entry points + config).
 - [x] Design and prototype finite-mixture fitting (starting with two-component Weibull/Gamma EM).
-- [ ] Implement mixture distribution utilities (density/CDF/sampling) for fitted components.
+- [x] Implement mixture distribution utilities (density/CDF/sampling) for fitted components. *(Current
+      support covers gamma/Weibull mixtures; extend coverage to other registry distributions in a
+      follow-up pass.)*
 - [ ] Integrate grouped-sample EM estimators for key distributions (Weibull, JSB, Birnbaum–Saunders).
 - [ ] Add Johnson SB / Generalised Secant family support to the distribution registry.
 - [ ] Expand GOF diagnostics (AD, CvM, KS, grouped residuals) in `FitResult`.
 - [ ] Explore piecewise / hybrid PDFs for left-right blending and document references in the docs.
+- [ ] Document parameter/return details for public APIs (docstrings and developer notes).
+- [ ] Add API reference pages to the Sphinx documentation.
 - [ ] Deliver Typer CLI parity with FHOPS feature set (fit, compare, report commands).
 - [ ] Build R `dbhdistfitr` wrapper with unit tests and pkgdown-ready docs.
 - [ ] Add CLI/GUI example scripts and integrate with FHOPS-style logging UX.
