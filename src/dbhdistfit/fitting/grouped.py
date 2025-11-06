@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.optimize import curve_fit, minimize, minimize_scalar
-from scipy.stats import fatiguelife, johnsonsb
+from scipy.stats import fatiguelife, johnsonsb, weibull_min
 from scipy.stats import gamma as gamma_dist
 
 from ..distributions import weibull_pdf
@@ -56,6 +56,21 @@ def _numerical_hessian(
             hessian[i, j] = value
             hessian[j, i] = value
     return hessian
+
+
+def _weibull_probabilities(a: float, beta: float, edges: np.ndarray) -> np.ndarray:
+    """Return bin probabilities for a Weibull distribution across provided edges."""
+    cdf_vals = weibull_min.cdf(edges, a, scale=beta)
+    probabilities = np.diff(cdf_vals)
+    if probabilities.size == 0:
+        return probabilities
+    probabilities[0] += cdf_vals[0]
+    probabilities[-1] += 1.0 - cdf_vals[-1]
+    probabilities = np.clip(probabilities, 1e-12, None)
+    total = float(np.sum(probabilities))
+    if total <= 0:
+        return np.full_like(probabilities, 1.0 / probabilities.size)
+    return probabilities / total
 
 
 def _prepare_grouped_data(
@@ -331,6 +346,7 @@ def _fit_weibull_grouped(
     x = np.asarray(inventory.bins, dtype=float)
     y = np.asarray(inventory.tallies, dtype=float)
     weights = config.weights
+    edges = _bin_edges_from_centroids(x)
     initial_map = dict(config.initial)
     a0 = float(initial_map.get("a", 2.0))
     beta0 = float(initial_map.get("beta", max(float(np.mean(x)) if x.size else 10.0, 1.0)))
@@ -402,13 +418,84 @@ def _fit_weibull_grouped(
 
     param_dict = {"a": float(params[0]), "beta": float(params[1]), "s": float(params[2])}
 
-    return FitResult(
+    ls_probs = _weibull_probabilities(param_dict["a"], param_dict["beta"], edges)
+    diagnostics["probabilities"] = ls_probs
+
+    ls_covariance = None
+    if cov is not None:
+        ls_covariance = np.zeros((3, 3), dtype=float)
+        ls_covariance[:3, :3] = cov
+
+    ls_result = FitResult(
         distribution="weibull",
-        parameters=param_dict,
-        covariance=cov,
+        parameters=param_dict.copy(),
+        covariance=ls_covariance,
         gof=gof,
         diagnostics=diagnostics,
     )
+
+    def objective(theta: np.ndarray) -> float:
+        shape = float(np.exp(theta[0]))
+        scale = float(np.exp(theta[1]))
+        probs = _weibull_probabilities(shape, scale, edges)
+        return float(-np.sum(y * np.log(probs)))
+
+    theta0 = np.log([param_dict["a"], param_dict["beta"]])
+    opt = minimize(objective, theta0, method="L-BFGS-B")
+    if not opt.success:
+        notes = ls_result.diagnostics.setdefault("notes", [])
+        notes.append("grouped likelihood refinement failed: " + opt.message)
+        return ls_result
+
+    shape = float(np.exp(opt.x[0]))
+    scale = float(np.exp(opt.x[1]))
+    mle_probs = _weibull_probabilities(shape, scale, edges)
+
+    amplitude = param_dict["s"]
+    mle_params = {"a": shape, "beta": scale, "s": amplitude}
+
+    covariance = None
+    try:
+        hessian = _numerical_hessian(objective, opt.x)
+        if hessian is not None:
+            cov_theta = np.linalg.inv(hessian)
+            jac = np.diag([shape, scale])
+            cov_params = jac @ cov_theta @ jac
+            covariance = np.zeros((3, 3), dtype=float)
+            covariance[:2, :2] = cov_params
+    except np.linalg.LinAlgError:
+        covariance = None
+
+    extras: dict[str, float | int | bool | str | np.ndarray | None] = {
+        "iterations": int(getattr(opt, "nit", 0)),
+        "converged": bool(opt.success),
+        "status": getattr(opt, "status", None),
+        "message": opt.message,
+        "weights": weights,
+    }
+
+    mle_result = _assemble_grouped_result(
+        "weibull",
+        mle_params,
+        y,
+        edges,
+        mle_probs,
+        covariance=covariance,
+        method="grouped-mle",
+        amplitude=amplitude,
+        extras=extras,
+    )
+
+    ls_vector = np.array([param_dict["a"], param_dict["beta"], param_dict["s"]])
+    mle_vector = np.array([mle_params["a"], mle_params["beta"], mle_params["s"]])
+    if not np.allclose(ls_vector, mle_vector, rtol=1e-3, atol=1e-3):
+        notes = ls_result.diagnostics.setdefault("notes", [])
+        notes.append(
+            "grouped likelihood refinement deviated from LS – keeping least squares solution"
+        )
+        return ls_result
+
+    return mle_result
 
 
 def _fit_johnsonsb_grouped(

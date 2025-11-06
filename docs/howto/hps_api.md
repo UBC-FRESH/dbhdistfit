@@ -35,12 +35,13 @@ results = fit_hps_inventory(
     dbh_cm=dbh_cm,
     tally=tally,
     baf=baf,
-    distributions=("weibull", "gamma", "gb2"),
+    distributions=("weibull", "gamma", "gb2", "gsm3", "gsm6"),
 )
 ```
 
 Inspect the goodness-of-fit metrics (RSS, AIC/AICc, BIC, chi-square, KS, CvM, AD) and residual
-summaries that are now populated automatically:
+summaries that are now populated automatically; any `gsmN` string (with `N ≥ 2`) will route through
+the generalized secant grouped estimator:
 
 ```python
 for result in results:

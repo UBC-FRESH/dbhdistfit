@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from dbhdistfit.workflows.hps import fit_hps_inventory
 
@@ -45,16 +46,18 @@ def test_grouped_birnbaum_saunders_estimator_applied() -> None:
     assert fit.parameters["beta"] > 0
 
 
-def test_grouped_gsm_estimator_applied() -> None:
+@pytest.mark.parametrize("distribution", ["gsm3", "gsm6"])
+def test_grouped_gsm_estimator_applied(distribution: str) -> None:
     bins = np.linspace(5, 35, num=8)
     counts = np.array([8, 14, 20, 24, 18, 12, 6, 3], dtype=float)
-    result = fit_hps_inventory(bins, counts, baf=1.0, distributions=("gsm5",))
+    result = fit_hps_inventory(bins, counts, baf=1.0, distributions=(distribution,))
     assert result
     fit = result[0]
-    assert fit.distribution == "gsm5"
+    assert fit.distribution == distribution
     assert fit.diagnostics.get("method") == "grouped-mle"
     assert fit.parameters["beta"] > 0
     assert "omega1" in fit.parameters
     weights = fit.diagnostics.get("component_weights")
     assert weights is not None
     assert float(weights[-1]) > 0
+    assert np.isclose(float(np.sum(weights)), 1.0, atol=1e-6)

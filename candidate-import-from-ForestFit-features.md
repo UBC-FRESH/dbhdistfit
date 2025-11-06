@@ -95,3 +95,35 @@ is to credit the original work while planning concrete ports into our workflow-d
 Tracking these items publicly keeps upstream credit clear and helps prioritise Phase 2 tasks. As we
 implement a feature, move the corresponding bullet to a “completed imports” section so downstream
 users can see which ForestFit ideas have been carried across.
+
+## Planned upgrade: grouped Weibull EM parity
+- **Reference set:** comparison papers in `reference-papers/forestfit-refs` (e.g., Teimouri et al. 2013 for
+  estimator comparisons, Zhang et al. 2011 for conditional MLE on spruce–fir tallies, Johnson 1949 and
+  Siekierski 1992 for the grouped Weibull likelihood).
+- **Observed practices (ForestFit/TMB scripts):**
+  - Grouped log-likelihood is written as `ℓ(θ) = Σ_j n_j log(F(u_j; θ) - F(l_j; θ))`, with bin bounds
+    taken directly from tally class edges (Johnson 1949). TMB routines compute analytic gradients by
+    differentiating this expression with respect to the shape/scale/location parameters.
+  - Conditional MLE enforces `α = min(DBH) - c` with small offsets (`c` ≈ 0.5–1.5 cm) to stabilise the
+    Weibull location estimate (Zhang et al. 2011); alternative fits fix `α = 0` and adjust bins instead.
+  - ForestFit initialises EM/MLE iterations from (i) method-of-moments for grouped data or (ii) the
+    least-squares (Knoebel–Burkhart) solution, then applies damped Newton updates on the grouped score.
+  - Covariance matrices are obtained from the observed information (negative Hessian of `ℓ(θ)`), which
+    is evaluated numerically when a closed-form is inconvenient.
+- **Action items for dbhdistfit:**
+  1. Implement the grouped log-likelihood and its gradient for the three-parameter Weibull, reusing the
+     bin edges we already compute. Accept an optional location lock (`α = min(DBH) - c`) to match the
+     ForestFit conditional MLE workflow. Verify derivatives against automatic differentiation (e.g.,
+     JAX) on synthetic data before wiring the optimiser.
+  2. Provide EM-style updates that mirror ForestFit’s approach: treat each bin as uniform within bounds,
+     compute expected `log X` and `X^k` terms analytically, and update `(α, β, γ)` per Teimouri et al.
+     or Siekierski’s formulas. Use the existing least-squares solution as iteration zero to preserve
+     parity on the manuscript dataset.
+  3. Once the EM/MLE converges, compute the observed-information matrix via finite-difference Hessian
+     (re-using `_numerical_hessian`) and attach the covariance to `FitResult`.
+  4. Benchmark the new solver against (a) ForestFit results on the spruce–fir plots and (b) the HPS
+     parity tallies. Track RSS/AICc deltas and iteration counts; fall back to the current LS solution if
+     convergence or parity criteria are not met.
+  5. After validation, retire the LS fallback, update docs to describe the grouped-MLE behaviour, and
+     add regression tests asserting that the manuscript PSP fit remains Weibull-first with the expected
+     parameters (within tolerance).

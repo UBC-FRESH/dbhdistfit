@@ -37,6 +37,8 @@ requirements firm up and is intended to stay in sync with day-to-day development
 - [ ] Build R `dbhdistfitr` wrapper with unit tests and pkgdown-ready docs.
 - [ ] Add CLI/GUI example scripts and integrate with FHOPS-style logging UX.
 - [ ] Document comparative positioning against ForestFit and related toolkits.
+- [ ] Add regression fixtures for grouped Weibull parity (HPS manuscript PSP and ForestFit spruce–fir
+      tallies) to guard the upcoming EM implementation.
 
 ## Phase 3 — Quality & Release Readiness
 - [ ] Expand unit and property-based tests; add golden fixtures for known tallies.

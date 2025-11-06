@@ -35,6 +35,8 @@ Pass additional `--distribution` options to try alternative PDFs as the CLI evol
 prints RSS, small-sample AIC (`AICc`), Pearson chi-square, Kolmogorov–Smirnov, Cramér–von Mises, and
 Anderson–Darling statistics (plus residual summaries) for each candidate distribution so you can
 compare fits at a glance.
+Generalised secant mixtures are exposed as `gsmN` (for any integer `N ≥ 2`), so a command such as
+`dbhdistfit fit-hps ... -d gsm3 -d gsm6` will evaluate both three- and six-component blends.
 Use `--distribution` (repeatable) to limit the candidate list and `--show-parameters` to include the
 fitted parameter estimates. For example:
 
