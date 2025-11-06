@@ -105,6 +105,8 @@ module = [
   "lmfit.*",
   "yaml",
   "yaml.*",
+  "datalad",
+  "datalad.*",
 ]
 ignore_missing_imports = true
 

@@ -36,6 +36,29 @@ class FitResult:
 
 
 @dataclass(slots=True)
+class MixtureComponentFit:
+    """Store the result of a single mixture component."""
+
+    name: str
+    weight: float
+    parameters: dict[str, float]
+    gof: dict[str, float] = field(default_factory=dict)
+    diagnostics: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class MixtureFitResult:
+    """Group the outputs of a finite-mixture fit."""
+
+    distribution: str
+    components: list[MixtureComponentFit]
+    log_likelihood: float
+    iterations: int
+    converged: bool
+    diagnostics: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
 class FitSummary:
     """Aggregate fit outputs over candidate distributions."""
 

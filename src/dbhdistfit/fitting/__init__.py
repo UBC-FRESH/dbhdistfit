@@ -254,3 +254,15 @@ def fit_inventory(
             config = default_fit_config(name, x, y)
         results.append(fitter(x, y, dist, config))
     return results
+
+
+from .mixture import MixtureComponentSpec, fit_mixture_grouped, fit_mixture_samples  # noqa: E402
+
+__all__ = [
+    "FitConfig",
+    "default_fit_config",
+    "fit_inventory",
+    "MixtureComponentSpec",
+    "fit_mixture_grouped",
+    "fit_mixture_samples",
+]

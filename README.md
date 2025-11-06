@@ -12,6 +12,7 @@ size-bias corrections, left/right censoring, and extensible distribution librari
 - Python API, Typer-powered CLI, and an R wrapper (`dbhdistfitr`) built on reticulate.
 - Reproducible examples (Jupyter, Python scripts, bash) linked to DataLad managed tallies.
 - Sphinx documentation with theory notes, API reference, and worked examples.
+- Experimental finite-mixture fitting (two-component EM) for grouped stand tables.
 
 ## Relationship to other tools
 `dbhdistfit` complements earlier diameter-distribution toolkits—most notably the R package
