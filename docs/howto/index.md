@@ -6,5 +6,6 @@
 hps_workflow
 hps_api
 hps_dataset
+custom_distributions
 contributing
 ```

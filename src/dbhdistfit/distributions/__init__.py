@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Mapping
+from pathlib import Path
 
 import numpy as np
 from scipy.special import gamma as gamma_fn
@@ -13,6 +15,8 @@ from .base import (
     clear_registry,
     get_distribution,
     list_distributions,
+    load_entry_points,
+    load_yaml_config,
     register_distribution,
 )
 from .generalized_beta import GENERALIZED_BETA_DISTRIBUTIONS
@@ -79,4 +83,19 @@ def _register_builtin() -> None:
         register_distribution(dist, overwrite=True)
 
 
+def _load_config_files() -> None:
+    project_root = Path(__file__).resolve().parents[3]
+    config_dir = project_root / "config" / "distributions"
+    if config_dir.exists():
+        for path in sorted(config_dir.glob("*.yaml")):
+            load_yaml_config(path)
+
+    env_paths = os.environ.get("DBHDISTFIT_DISTRIBUTIONS")
+    if env_paths:
+        for item in env_paths.split(os.pathsep):
+            load_yaml_config(item)
+
+
 _register_builtin()
+load_entry_points()
+_load_config_files()
