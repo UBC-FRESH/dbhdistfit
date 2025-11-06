@@ -52,6 +52,8 @@ is to credit the original work while planning concrete ports into our workflow-d
 - **Value add:** JSB/GSM offer flexible bounded support and proven performance on irregular stand
   structures in the forestry literature; including them broadens our default distribution library to
   match ForestFit’s coverage.
+- **Status:** JSB plus GSM3/GSM4 now live in the registry with grouped maximum-likelihood estimators;
+  extend to arbitrary component counts and surface documentation/tutorial coverage.
 
 ## Bayesian fitting via TMB analogues
 - **ForestFit reference:** `fitbayesJSB()` and `fitbayesWeibull()` use Template Model Builder (TMB)

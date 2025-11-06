@@ -29,7 +29,7 @@ def fit_hps_inventory(
         sampling="hps",
         bins=dbh,
         tallies=stand_table,
-        metadata={"baf": baf, "original_tally": tallies},
+        metadata={"baf": baf, "original_tally": tallies, "grouped": True},
     )
     chosen = tuple(distributions) if distributions is not None else ("weibull", "gamma")
     configs = dict(configs or {})

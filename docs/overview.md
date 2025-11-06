@@ -30,3 +30,11 @@ toolkit:
 Future roadmap items include mixture and piecewise models inspired by the forestry literature cited
 in the README. Contributions comparing the toolkits or proposing cross-language examples are very
 welcome.
+
+## Current Caveats
+- The grouped Weibull workflow uses a curve-fit back-end to preserve manuscript parity; an EM
+  implementation with covariance reporting is slated for a follow-up release.
+- Johnson SB grouped fits fall back to SciPy’s continuous MLE when the grouped optimiser fails, so
+  diagnostics will report a non-converged status in those cases.
+- Generalised secant (GSM) support currently covers three- and four-component mixtures. Extending the
+  estimator and registry entries to arbitrary component counts remains on the roadmap.

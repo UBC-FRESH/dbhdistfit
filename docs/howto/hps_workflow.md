@@ -32,8 +32,9 @@ dbhdistfit fit-hps data/hps_tally.csv --baf 2.0
 ```
 
 Pass additional `--distribution` options to try alternative PDFs as the CLI evolves. The command
-prints RSS, small-sample AIC (`AICc`), Pearson chi-square, and the maximum absolute residual for each
-candidate distribution so you can compare fits at a glance.
+prints RSS, small-sample AIC (`AICc`), Pearson chi-square, Kolmogorov–Smirnov, Cramér–von Mises, and
+Anderson–Darling statistics (plus residual summaries) for each candidate distribution so you can
+compare fits at a glance.
 Use `--distribution` (repeatable) to limit the candidate list and `--show-parameters` to include the
 fitted parameter estimates. For example:
 

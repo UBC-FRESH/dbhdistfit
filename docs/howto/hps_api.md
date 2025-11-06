@@ -39,8 +39,8 @@ results = fit_hps_inventory(
 )
 ```
 
-Inspect the goodness-of-fit metrics (RSS, AIC/AICc, BIC, chi-square) and residual summaries that are
-now populated automatically:
+Inspect the goodness-of-fit metrics (RSS, AIC/AICc, BIC, chi-square, KS, CvM, AD) and residual
+summaries that are now populated automatically:
 
 ```python
 for result in results:
@@ -51,6 +51,9 @@ for result in results:
         f" RSS={gof['rss']:.2f}"
         f" AICc={gof.get('aicc', float('nan')):.2f}"
         f" Chi^2={gof.get('chisq', float('nan')):.2f}"
+        f" KS={gof.get('ks', float('nan')):.3f}"
+        f" CvM={gof.get('cvm', float('nan')):.3f}"
+        f" AD={gof.get('ad', float('nan')):.3f}"
         f" Max|res|={residuals.get('max_abs', float('nan')):.2f}"
     )
 ```

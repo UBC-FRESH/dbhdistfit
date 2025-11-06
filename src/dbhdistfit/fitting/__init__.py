@@ -13,6 +13,7 @@ from scipy.optimize import curve_fit
 
 from ..distributions import Distribution, get_distribution
 from ..typing import FitResult, InventorySpec
+from .grouped import get_grouped_estimator
 
 Objective = Callable[[np.ndarray, np.ndarray, Mapping[str, float]], float]
 
@@ -47,11 +48,31 @@ def _positive(value: float, fallback: float = 1.0) -> float:
 
 
 def _default_bounds(parameters: tuple[str, ...]) -> dict[str, tuple[float | None, float | None]]:
-    lower_positive = {"a", "b", "beta", "p", "q", "sigma2", "d", "u", "v", "df", "s"}
+    lower_positive = {
+        "a",
+        "b",
+        "beta",
+        "p",
+        "q",
+        "sigma2",
+        "d",
+        "u",
+        "v",
+        "df",
+        "s",
+        "alpha",
+        "scale",
+    }
     bounds: dict[str, tuple[float | None, float | None]] = {}
     for name in parameters:
-        if name in lower_positive:
-            bounds[name] = (1e-6, None)
+        lower: float | None = None
+        upper: float | None = None
+        if name in lower_positive or name.startswith("omega"):
+            lower = 1e-6
+        if name.startswith("omega"):
+            upper = 1.0
+        if lower is not None or upper is not None:
+            bounds[name] = (lower, upper)
     return bounds
 
 
@@ -99,6 +120,8 @@ def default_fit_config(name: str, x: np.ndarray, y: np.ndarray) -> FitConfig:
     mean, variance, std, xmin, xmax = _moment_summary(x, y)
     scale = float(np.max(y)) if y.size else 1.0
     initial: dict[str, float] = {}
+    omega_params = [param for param in dist.parameters if param.startswith("omega")]
+    omega_components = len(omega_params) + (1 if omega_params else 0)
 
     if "s" in dist.parameters:
         initial["s"] = _positive(scale, 1.0)
@@ -122,6 +145,12 @@ def default_fit_config(name: str, x: np.ndarray, y: np.ndarray) -> FitConfig:
             guess = float(np.log(_positive(mean, 1.0)))
         elif param == "sigma2":
             guess = _positive(std**2, 0.5)
+        elif param == "alpha":
+            guess = 1.5
+        elif param == "loc":
+            guess = xmin
+        elif param == "scale":
+            guess = _positive(std, 1.0)
         elif param == "d":
             guess = 2.0
         elif param == "u":
@@ -130,6 +159,9 @@ def default_fit_config(name: str, x: np.ndarray, y: np.ndarray) -> FitConfig:
             guess = 10.0
         elif param == "df":
             guess = 6.0
+        elif param.startswith("omega"):
+            component_count = omega_components if omega_components else 2
+            guess = 1.0 / component_count
         initial[param] = _positive(guess, 1.0)
 
     bounds = _default_bounds(dist.parameters)
@@ -246,12 +278,22 @@ def fit_inventory(
     """Fit a collection of candidate distributions to an inventory."""
     x = np.asarray(inventory.bins, dtype=float)
     y = np.asarray(inventory.tallies, dtype=float)
+    configs = dict(configs)
     results: list[FitResult] = []
+    grouped = bool(inventory.metadata.get("grouped"))
     for name in distributions:
         dist = get_distribution(name)
         config = configs.get(name)
         if config is None:
             config = default_fit_config(name, x, y)
+            configs[name] = config
+        estimator = get_grouped_estimator(name) if grouped else None
+        if estimator is not None:
+            try:
+                results.append(estimator(inventory, config))
+                continue
+            except ValueError:
+                pass
         results.append(fitter(x, y, dist, config))
     return results
 

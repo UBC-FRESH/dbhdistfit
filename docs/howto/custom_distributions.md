@@ -1,6 +1,7 @@
 # Register Custom Distributions
 
-`dbhdistfit` ships with a core registry (Weibull, Gamma, the generalized beta family) and can be
+`dbhdistfit` ships with a core registry (Weibull, Gamma, Johnson SB, Birnbaum-Saunders, and the
+generalized beta and generalized secant families) and can be
 extended at runtime. You can plug in additional probability density functions either by calling the
 Python API directly, by installing a plugin that exposes an entry point, or by pointing the toolkit
 at a YAML configuration file.
