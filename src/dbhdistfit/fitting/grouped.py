@@ -6,7 +6,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 import numpy as np
-from scipy.optimize import curve_fit, minimize, minimize_scalar
+from scipy.optimize import approx_fprime, curve_fit, minimize, minimize_scalar
 from scipy.stats import fatiguelife, johnsonsb, weibull_min
 from scipy.stats import gamma as gamma_dist
 
@@ -451,7 +451,7 @@ def _fit_weibull_grouped(
         diagnostics=diagnostics,
     )
 
-    def objective(theta: np.ndarray) -> float:
+    def neg_loglik(theta: np.ndarray) -> float:
         shape = float(np.exp(theta[0]))
         scale = float(np.exp(theta[1]))
         probs = _weibull_probabilities(
@@ -462,15 +462,52 @@ def _fit_weibull_grouped(
         )
         return float(-np.sum(y * np.log(probs)))
 
-    theta0 = np.log([param_dict["a"], param_dict["beta"]])
-    opt = minimize(objective, theta0, method="L-BFGS-B")
-    if not opt.success:
+    theta = np.log([param_dict["a"], param_dict["beta"]])
+    nll_current = neg_loglik(theta)
+    newton_converged = False
+
+    last_iteration = 0
+    for iteration in range(1, 9):
+        last_iteration = iteration
+        gradient = approx_fprime(theta, neg_loglik, epsilon=1e-6)
+        if not np.all(np.isfinite(gradient)):
+            break
+        if np.linalg.norm(gradient) < 1e-5:
+            newton_converged = True
+            break
+        hessian = _numerical_hessian(neg_loglik, theta)
+        if hessian is None:
+            break
+        try:
+            step = np.linalg.solve(hessian, gradient)
+        except np.linalg.LinAlgError:
+            break
+        if not np.all(np.isfinite(step)):
+            break
+        theta_candidate = theta - step
+        if not np.all(np.isfinite(theta_candidate)):
+            break
+        nll_candidate = neg_loglik(theta_candidate)
+        if np.isnan(nll_candidate) or nll_candidate > nll_current:
+            theta_candidate = theta - 0.5 * step
+            nll_candidate = neg_loglik(theta_candidate)
+            if np.isnan(nll_candidate) or nll_candidate > nll_current:
+                break
+        theta = theta_candidate
+        nll_current = nll_candidate
+        if np.linalg.norm(step) < 1e-6:
+            newton_converged = True
+            break
+    else:
+        newton_converged = True
+
+    if not newton_converged:
         notes = ls_result.diagnostics.setdefault("notes", [])
-        notes.append("grouped likelihood refinement failed: " + opt.message)
+        notes.append("grouped Newton refinement failed – keeping least squares solution")
         return ls_result
 
-    shape = float(np.exp(opt.x[0]))
-    scale = float(np.exp(opt.x[1]))
+    shape = float(np.exp(theta[0]))
+    scale = float(np.exp(theta[1]))
     mle_probs = _weibull_probabilities(shape, scale, edges, location_shift=location_shift)
 
     amplitude = param_dict["s"]
@@ -478,7 +515,7 @@ def _fit_weibull_grouped(
 
     covariance = None
     try:
-        hessian = _numerical_hessian(objective, opt.x)
+        hessian = _numerical_hessian(neg_loglik, theta)
         if hessian is not None:
             cov_theta = np.linalg.inv(hessian)
             jac = np.diag([shape, scale])
@@ -489,10 +526,10 @@ def _fit_weibull_grouped(
         covariance = None
 
     extras: dict[str, float | int | bool | str | np.ndarray | None] = {
-        "iterations": int(getattr(opt, "nit", 0)),
-        "converged": bool(opt.success),
-        "status": getattr(opt, "status", None),
-        "message": opt.message,
+        "iterations": last_iteration,
+        "converged": newton_converged,
+        "status": None,
+        "message": None,
         "weights": weights,
     }
 
