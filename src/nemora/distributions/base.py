@@ -30,6 +30,7 @@ class Distribution:
     cdf: Pdf | None = None
     bounds: dict[str, tuple[float | None, float | None]] | None = None
     notes: str | None = None
+    extras: dict[str, Any] | None = None
 
 
 _REGISTRY: dict[str, Distribution] = {}

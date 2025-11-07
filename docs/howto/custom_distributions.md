@@ -29,7 +29,9 @@ register_distribution(
         name="truncnorm",
         parameters=("mu", "sigma", "s"),
         pdf=truncated_normal_pdf,
-        notes="Example plugin distribution."
+        notes="Example plugin distribution.",
+        bounds={"sigma": (1e-6, None)},
+        extras={"source": "python-api"},
     ),
     overwrite=True,
 )
@@ -63,6 +65,8 @@ def create_truncnorm() -> Distribution:
         parameters=("mu", "sigma", "s"),
         pdf=truncated_normal_pdf,
         notes="Truncated Normal distribution shipped by my_plugin.",
+        bounds={"sigma": (1e-6, None)},
+        extras={"source": "entry-point"},
     )
 ```
 
@@ -83,6 +87,8 @@ distributions:
     parameters: ["mu", "sigma", "s"]
     pdf: my_plugin.pdf:truncated_normal_pdf
     notes: "Truncated normal PDF from my_plugin."
+    bounds:
+      sigma: [1e-6, null]
   - callable: my_plugin.factory:create_mixture
     overwrite: true
     args: [2]

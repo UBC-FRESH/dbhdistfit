@@ -27,12 +27,12 @@ src/nemora/
 ## High-Level Workstreams
 
 1. **Core scaffolding**
-   - [ ] Introduce `nemora.core` with shared types (e.g., `InventorySpec`), seed utilities, logging/config plumbing.
-   - [ ] Define module-level conventions (public API, config schema, entry points).
+   - [x] Introduce `nemora.core` with shared types (e.g., `InventorySpec`), seed utilities, logging/config plumbing.
+   - [x] Define module-level conventions (public API, config schema, entry points).
 
 2. **Central distributions registry (`nemora.distributions`)**
-   - [ ] Extract canonical distribution metadata/registration logic from current code.
-   - [ ] Expose shared APIs so ingest, distfit, sampling, and synthforest can consume consistent definitions.
+   - [x] Extract canonical distribution metadata/registration logic from current code.
+   - [x] Expose shared APIs so ingest, distfit, sampling, and synthforest can consume consistent definitions.
    - [ ] Document extension points for user-supplied distributions.
 
 3. **Distribution fitting (`nemora.distfit`) – Alpha delivered**

@@ -101,6 +101,7 @@ def test_entry_point_registration(monkeypatch: pytest.MonkeyPatch) -> None:
         parameters=("scale",),
         pdf=_dummy_pdf,
         notes="Entry-point supplied distribution.",
+        extras={"origin": "entry-point"},
     )
 
     monkeypatch.setattr(
@@ -112,6 +113,7 @@ def test_entry_point_registration(monkeypatch: pytest.MonkeyPatch) -> None:
     base_registry.load_entry_points()
     assert "entrypoint_demo" in list_distributions()
     dist = get_distribution("entrypoint_demo")
+    assert dist.extras == {"origin": "entry-point"}
     result = dist.pdf(np.array([1.0, 2.0]), {"scale": 2.5})
     assert np.allclose(result, 2.5)
 
@@ -139,5 +141,6 @@ distributions:
     assert registered == ["yaml_demo"]
     dist = get_distribution("yaml_demo")
     assert np.allclose(dist.pdf(np.array([0.0]), {"scale": 3.0}), 3.0)
+    assert dist.extras is None
 
     _reload_registry()
