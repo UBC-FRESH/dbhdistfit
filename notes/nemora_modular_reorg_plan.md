@@ -35,13 +35,13 @@ src/nemora/
    - [ ] Expose shared APIs so ingest, distfit, sampling, and synthforest can consume consistent definitions.
    - [ ] Document extension points for user-supplied distributions.
 
-3. **Distribution fitting (`nemora.distfit`) – Alpha priority (next 1–2 days)**
-   - [ ] Move existing fitting, grouped estimators, and mixture utilities into dedicated subpackage.
-   - [ ] Wire both Python API and CLI subcommands to the new namespace without breaking current usage.
-   - [ ] Expand unit tests/CI around grouped EM, fixtures, CLI regression, and ensure coverage reports run under new module name.
-   - [ ] Publish alpha documentation (module overview + API reference) and update README.
+3. **Distribution fitting (`nemora.distfit`) – Alpha delivered**
+   - [x] Move existing fitting, grouped estimators, and mixture utilities into dedicated subpackage.
+   - [x] Wire both Python API and CLI subcommands to the new namespace without breaking current usage.
+   - [x] Expand unit tests/CI around grouped EM, fixtures, CLI regression, and ensure coverage reports run under new module name.
+   - [x] Publish alpha documentation (module overview + API reference) and update README.
 
-4. **Ingestion / ETL (`nemora.ingest`)**
+4. **Ingestion / ETL (`nemora.ingest`) – Phase 2 kickoff**
    - [ ] Audit current scripts for reusable ETL logic.
    - [ ] Design `DatasetSource`, `RecordBatch`, `TransformPipeline` abstractions aligned with `nemora.core`.
    - [ ] Implement key connectors (BC FAIB, FIA, etc.), add CLI helpers, and unit/integration tests against sample raw datasets.
@@ -83,9 +83,9 @@ src/nemora/
 
 - Project age (~2 days) means no backward-compatibility burden; move quickly while keeping tests green.
 - Build `core` + central `distributions` first to avoid circular imports and ensure shared metadata.
-- Prioritise `distfit` alpha immediately (current code migrates first, unit tests expanded).
-- `sampling` depends on the central registry and distfit outputs; schedule right after distfit alpha.
-- `ingest` can proceed in parallel once core/distributions are stable (feeds synthetic/testing pipelines).
+- `distfit` alpha complete; results feed directly into upcoming sampling/ingest modules.
+- `ingest` depends on `core`/`distributions` types; plan abstractions now that distfit is settled.
+- `sampling` depends on the central registry and distfit outputs; schedule right after ingest scaffolding.
 - `synthforest` and `simulations` layer on top of distfit + sampling and can follow after alpha milestones.
 - Maintain strong unit testing and CI gating at each step.
 
@@ -97,6 +97,6 @@ src/nemora/
 
 ## Next Steps
 
-1. Review this plan with maintainers and align on scope for the first reorg milestone.
-2. Kick off a branch for `core/` scaffolding and `distfit` migration.
-3. Draft migration notes + communication plan (blog post, README updates).
+1. Finalise `DatasetSource` / `TransformPipeline` interface proposal and circulate for feedback.
+2. Prototype sampling helpers (PDF→CDF inversion, bootstrap configuration) and capture design decisions.
+3. Draft ingest fixture plan (BC FAIB/FIA samples) and outline integration tests.

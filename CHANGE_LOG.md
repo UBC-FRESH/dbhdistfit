@@ -87,3 +87,4 @@
 - Bumped the package/version metadata to `0.0.1-alpha` and updated the Sphinx fallback release string so local docs match.
 - Confirmed roadmap Phase 1 checkboxes are closed and reoriented the detailed next-step notes toward Phase 2 module design.
 - Regenerated Sphinx docs (`sphinx-build -b html docs _build/html -W`) and `pytest` to validate the version bump before tagging.
+- Created initial `nemora.ingest` scaffolding (module stub + to-do doc) and refreshed the modular reorg plan with Phase 2 ingest/sampling priorities.
