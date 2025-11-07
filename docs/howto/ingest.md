@@ -102,6 +102,9 @@ nemora ingest-faib tests/fixtures/faib --baf 12 --output stand_table.csv
 
 # Fetch PSP extracts and write output
 nemora ingest-faib data/external/faib --baf 12 --fetch --dataset psp --output stand_table.csv
+
+# Generate trimmed fixtures + manifest (used in tests)
+python scripts/generate_faib_manifest.py examples/faib_manifest --dataset psp
 ```
 
 The command expects pre-downloaded FAIB CSV extracts; future versions will
