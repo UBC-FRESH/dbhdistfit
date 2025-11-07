@@ -1,12 +1,15 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from nemora.ingest.fia import (
     FIATables,
     aggregate_plot_stand_table,
     build_stand_table_from_csvs,
 )
+
+FIXTURES = Path("tests/fixtures/fia")
 
 
 def test_aggregate_plot_stand_table_basic() -> None:
@@ -43,66 +46,41 @@ def test_aggregate_plot_stand_table_basic() -> None:
     assert list(result["tally"]) == [2.5, 1.5]
 
 
-def test_build_stand_table_from_csvs(tmp_path: Path) -> None:
-    tree = pd.DataFrame(
-        {
-            "PLT_CN": [100, 100],
-            "SUBP": [1, 1],
-            "TREE": [1, 2],
-            "CONDID": [1, 1],
-            "STATUSCD": [1, 1],
-            "SPCD": [200, 201],
-            "DIA": [8.0, 16.0],
-            "TPA_UNADJ": [10.0, 5.0],
-        }
+@pytest.mark.parametrize(
+    "plot_cn, expected_dbh, expected_tally",
+    [
+        (47825261010497, 3.0, 28.405695),
+        (47825253010497, 20.0, 12.036092),
+    ],
+)
+def test_build_stand_table_from_fixtures(
+    plot_cn: int, expected_dbh: float, expected_tally: float
+) -> None:
+    result = build_stand_table_from_csvs(
+        FIXTURES,
+        plot_cn=plot_cn,
+        tree_file="tree_small.csv",
+        cond_file="cond_small.csv",
+        plot_file="plot_small.csv",
     )
-    cond = pd.DataFrame(
-        {
-            "PLT_CN": [100],
-            "CONDID": [1],
-            "COND_STATUS_CD": [1],
-            "CONDPROP_UNADJ": [1.0],
-            "SUBPPROP_UNADJ": [None],
-            "MICRPROP_UNADJ": [None],
-            "MACRPROP_UNADJ": [None],
-        }
-    )
-    plot = pd.DataFrame({"CN": [100], "PLOT": [3001]})
-    tree.to_csv(tmp_path / "TREE.csv", index=False)
-    cond.to_csv(tmp_path / "COND.csv", index=False)
-    plot.to_csv(tmp_path / "PLOT.csv", index=False)
-
-    result = build_stand_table_from_csvs(tmp_path, plot_cn=100)
     assert not result.empty
-    assert set(result.columns) == {"plot_cn", "plot", "dbh_cm", "tally"}
-    assert result.loc[result["dbh_cm"] == 20.0, "tally"].iloc[0] == 10.0
+    assert {"plot_cn", "plot", "dbh_cm", "tally"} == set(result.columns)
+    assert plot_cn in result["plot_cn"].unique()
+    observed = result.loc[
+        (result["plot_cn"] == plot_cn) & (result["dbh_cm"] == expected_dbh),
+        "tally",
+    ].iloc[0]
+    assert observed == pytest.approx(expected_tally, rel=1e-6)
 
 
-def test_aggregate_plot_stand_table_empty_when_no_live_records() -> None:
-    tree = pd.DataFrame(
-        {
-            "PLT_CN": [1],
-            "SUBP": [1],
-            "TREE": [1],
-            "CONDID": [1],
-            "STATUSCD": [2],  # removed because not live
-            "SPCD": [100],
-            "DIA": [12.0],
-            "TPA_UNADJ": [3.0],
-        }
-    )
-    cond = pd.DataFrame(
-        {
-            "PLT_CN": [1],
-            "CONDID": [1],
-            "COND_STATUS_CD": [1],
-            "CONDPROP_UNADJ": [1.0],
-            "SUBPPROP_UNADJ": [None],
-            "MICRPROP_UNADJ": [None],
-            "MACRPROP_UNADJ": [None],
-        }
-    )
-    plot = pd.DataFrame({"CN": [1], "PLOT": [1]})
-    tables = FIATables(tree=tree, condition=cond, plot=plot)
-    result = aggregate_plot_stand_table(tables)
-    assert result.empty
+def test_dead_trees_excluded_from_stand_table() -> None:
+    tables = load_fixture_tables()
+    result = aggregate_plot_stand_table(tables, plot_cn=47825253010497)
+    assert result["tally"].sum() == pytest.approx(249.488616, rel=1e-6)
+
+
+def load_fixture_tables() -> FIATables:
+    tree = pd.read_csv(FIXTURES / "tree_small.csv")
+    cond = pd.read_csv(FIXTURES / "cond_small.csv")
+    plot = pd.read_csv(FIXTURES / "plot_small.csv")
+    return FIATables(tree=tree, condition=cond, plot=plot)

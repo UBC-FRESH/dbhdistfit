@@ -16,6 +16,7 @@ Status: In progress — stand-table aggregation, FTP fetch helper (with overwrit
    - Cache CSV extracts under `data/external/faib/` (gitignored) and support overwrite-safe refreshes via `.part` temp files.
    - ✅ `generate_faib_manifest` now wraps `download_faib_csvs`, enabling automated fetch + manifest creation via CLI/script.
    - ✅ FIA prototype helper aggregates `TREE`/`COND`/`PLOT` tables into stand tables (plot CN filter, DBH conversion).
+   - ✅ Trimmed FIA fixtures (`tests/fixtures/fia/`) recorded for deterministic tests.
 
 2. **Transform**
    - Join headers and sample metadata by `(CLSTR_ID, VISIT_NUMBER, PLOT)`.
@@ -32,7 +33,7 @@ Status: In progress — stand-table aggregation, FTP fetch helper (with overwrit
 - Unit tests covering join logic, DBH binning, and BAF subsampling using small CSV fixtures.
 - Integration test (optional skip) that downloads a tiny slice via FTP to ensure schema alignment (pending).
 - CLI smoke test added for `nemora faib-manifest`; extend with end-to-end download once CI policy confirmed.
-- Add regression harness for FIA aggregation once trimmed fixtures are authored (TODO).
+- Add regression harness for FIA aggregation once trimmed fixtures are authored (TODO). ✅ basic coverage in `tests/test_ingest_fia.py`; extend with CLI once implemented.
 
 ## Documentation
 

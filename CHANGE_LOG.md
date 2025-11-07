@@ -136,3 +136,9 @@
 - Added `nemora.ingest.fia` with helpers to load TREE/COND/PLOT CSV extracts, convert DBH to centimetres, weight tallies by `TPA_UNADJ` and condition proportions, and aggregate per-plot stand tables; included unit tests covering aggregation and CSV loading paths.
 - Wired the FIA module into the ingest namespace, refreshed the ingest how-to with example usage, and expanded the pipeline outline to track upcoming FIA regression fixtures and automation.
 - Test suite: `ruff format src tests`, `ruff check src tests`, `mypy src`, `pytest`.
+
+## 2025-11-07 — FIA fixtures and regression coverage
+
+- Trimmed the Hawaii FIA sample into lightweight fixtures (`tests/fixtures/fia/`) with accompanying README/licensing notes, enabling deterministic tests without full DATAMART downloads.
+- Updated `tests/test_ingest_fia.py` to consume the fixtures, parameterise per-plot checks, and verify dead trees are excluded from stand tables; added documentation and pipeline outline updates to reflect the new assets.
+- Tests: `ruff check`, `mypy src`, `pytest`.

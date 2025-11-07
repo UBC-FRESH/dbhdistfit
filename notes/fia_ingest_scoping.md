@@ -46,8 +46,8 @@ Tasks:
 
 - [x] Download a small FIA sample (single state) and inspect schemas; store notes under `data/external/fia/raw/`.
 - [ ] Prototype a `DatasetSource` entry and fetcher stub mirroring FAIB approach.
-- [ ] Trim the HI sample into fixtures (`tests/fixtures/fia/`) with README/licensing notes and update tests to rely on them.
-- [ ] Add regression coverage exercising multi-condition weighting and non-live tree filtering.
+- [x] Trim the HI sample into fixtures (`tests/fixtures/fia/`) with README/licensing notes and update tests to rely on them.
+- [x] Add regression coverage exercising multi-condition weighting and non-live tree filtering.
 - [ ] Coordinate with documentation to ensure licensing/attribution requirements captured.
 - [ ] Draft a CLI workflow (`nemora ingest-fia`) after fixtures and regression harness are available.
 
@@ -63,4 +63,4 @@ Tasks:
 - Expansion weights available via `TPA_UNADJ` (trees per acre); need conversion to per-ha or direct tally weights.
 - Condition proportions (`CONDPROP_UNADJ`, `MICRPROP_UNADJ`, `SUBPPROP_UNADJ`, `MACRPROP_UNADJ`) will gate weighting when multiple conditions share a plot.
 - Plot status codes (`PLOT_STATUS_CD`) and condition status codes (`COND_STATUS_CD`) determine live forest vs nonforest filtering.
-- Next steps: finalise trimmed fixtures, derive sample aggregation script joining plot/cond/tree using the fixtures, evaluate basal area factors (if available), and capture column descriptions from FIA documentation.
+- Next steps: derive sample aggregation script joining plot/cond/tree using the fixtures, evaluate basal area factors (if available), and capture column descriptions from FIA documentation.
