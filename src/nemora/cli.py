@@ -17,7 +17,7 @@ from rich.table import Table
 
 from . import __version__
 from .distributions import get_distribution, list_distributions
-from .ingest.faib import build_stand_table_from_csvs
+from .ingest.faib import build_stand_table_from_csvs, download_faib_csvs
 from .workflows.hps import fit_hps_inventory
 
 app = typer.Typer(help="Nemora distribution fitting CLI (distfit alpha).")
@@ -93,6 +93,27 @@ FAIB_OUTPUT_OPTION = typer.Option(
     "--output",
     "-o",
     help="Optional path to write the stand table CSV.",
+    show_default=False,
+)
+
+FAIB_FETCH_OPTION = typer.Option(
+    False,
+    "--fetch/--no-fetch",
+    help="Download required FAIB CSV files before building the stand table.",
+    show_default=True,
+)
+
+FAIB_DATASET_OPTION = typer.Option(
+    "psp",
+    "--dataset",
+    help="FAIB dataset to process (psp or non_psp).",
+    show_default=True,
+)
+
+FAIB_CACHE_OPTION = typer.Option(
+    None,
+    "--cache-dir",
+    help="Destination directory for downloaded FAIB files (defaults to root when omitted).",
     show_default=False,
 )
 
@@ -198,11 +219,27 @@ def fit_hps(  # noqa: B008
 def ingest_faib(  # noqa: B008
     root: Path = FAIB_ROOT_ARGUMENT,
     baf: float = typer.Option(..., "--baf", help="Basal area factor to filter (e.g., 12)."),
+    dataset: str = FAIB_DATASET_OPTION,
+    fetch: bool = FAIB_FETCH_OPTION,
+    cache_dir: Path | None = FAIB_CACHE_OPTION,
     output: Path | None = FAIB_OUTPUT_OPTION,
 ) -> None:
     """Generate a stand table from local FAIB PSP extracts."""
+    target_root = root
+    if fetch:
+        destination = cache_dir or root
+        try:
+            downloaded = download_faib_csvs(destination, dataset=dataset)
+        except Exception as exc:
+            console.print(f"[red]Download failed:[/red] {exc}")
+            raise typer.Exit(code=1) from exc
+        target_root = destination
+        console.print(
+            f"[green]Fetched[/green] {len(downloaded)} files to {destination} "
+            f"(dataset={dataset})"
+        )
     try:
-        stand_table = build_stand_table_from_csvs(root, baf)
+        stand_table = build_stand_table_from_csvs(target_root, baf)
     except Exception as exc:
         console.print(f"[red]Failed to build stand table:[/red] {exc}")
         raise typer.Exit(code=1) from exc

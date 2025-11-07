@@ -16,12 +16,6 @@ from typing import Any, Protocol
 
 import pandas as pd
 
-__all__ = [
-    "DatasetFetcher",
-    "DatasetSource",
-    "TransformPipeline",
-]
-
 
 class DatasetFetcher(Protocol):
     """Callable that retrieves one or more artifacts for a dataset source."""
@@ -80,3 +74,13 @@ class TransformPipeline:
         for step in self.steps:
             result = step(result)
         return result
+
+
+from . import faib as faib  # noqa: E402,F401
+
+__all__ = [
+    "DatasetFetcher",
+    "DatasetSource",
+    "TransformPipeline",
+    "faib",
+]

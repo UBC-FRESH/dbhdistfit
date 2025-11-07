@@ -193,6 +193,46 @@ def test_ingest_faib_command(tmp_path: Path) -> None:
     assert "tally" in df.columns
 
 
+def test_ingest_faib_command_with_fetch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    cache_dir = tmp_path / "cache"
+    output = tmp_path / "out.csv"
+
+    def fake_download(destination: Path, dataset: str) -> list[Path]:
+        destination.mkdir(parents=True, exist_ok=True)
+        (destination / "faib_tree_detail.csv").write_text(
+            "CLSTR_ID,VISIT_NUMBER,PLOT,DBH_CM,TREE_EXP\nA,1,1,12.0,2\n",
+            encoding="utf-8",
+        )
+        (destination / "faib_sample_byvisit.csv").write_text(
+            "CLSTR_ID,VISIT_NUMBER,PLOT,BAF\nA,1,1,12\n",
+            encoding="utf-8",
+        )
+        return [destination / "faib_tree_detail.csv", destination / "faib_sample_byvisit.csv"]
+
+    monkeypatch.setattr("nemora.cli.download_faib_csvs", fake_download)
+
+    result = runner.invoke(
+        app,
+        [
+            "ingest-faib",
+            str(tmp_path),
+            "--baf",
+            "12",
+            "--fetch",
+            "--dataset",
+            "psp",
+            "--cache-dir",
+            str(cache_dir),
+            "--output",
+            str(output),
+        ],
+    )
+    assert result.exit_code == 0
+    assert output.exists()
+    df = pd.read_csv(output)
+    assert not df.empty
+
+
 def test_fetch_reference_data_dry_run_message() -> None:
     result = runner.invoke(app, ["fetch-reference-data"])  # default dry-run
     assert result.exit_code == 0

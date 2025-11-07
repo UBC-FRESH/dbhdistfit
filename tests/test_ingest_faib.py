@@ -9,6 +9,7 @@ from nemora.ingest.faib import (
     DataDictionary,
     aggregate_stand_table,
     build_stand_table_from_csvs,
+    download_faib_csvs,
     load_data_dictionary,
     load_non_psp_dictionary,
     load_psp_dictionary,
@@ -84,3 +85,44 @@ def test_build_stand_table_from_csvs(tmp_path: Path) -> None:
     fixture_root = Path("tests/fixtures/faib")
     result = build_stand_table_from_csvs(fixture_root, baf=12.0)
     assert list(result["dbh_cm"]) == [12.0, 13.0, 25.0]
+
+
+def test_download_faib_csvs(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    listing = (
+        b"05-01-25  09:00AM  12345 faib_tree_detail.csv\n"
+        b"05-01-25  09:00AM  67890 faib_sample_byvisit.csv\n"
+        b"05-01-25  09:00AM  11111 readme.txt\n"
+    )
+    file_data = {
+        "faib_tree_detail.csv": b"CLSTR_ID,VISIT_NUMBER,PLOT,DBH_CM,TREE_EXP\nA,1,1,12,2\n",
+        "faib_sample_byvisit.csv": b"CLSTR_ID,VISIT_NUMBER,PLOT,BAF\nA,1,1,12\n",
+    }
+
+    class FakeResponse:
+        def __init__(self, data: bytes) -> None:
+            self._data = data
+
+        def read(self) -> bytes:
+            return self._data
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+    urls_requested: list[str] = []
+
+    def fake_urlopen(url: str, *args, **kwargs):
+        urls_requested.append(url)
+        if url.endswith("psp/"):
+            return FakeResponse(listing)
+        name = url.split("/")[-1]
+        return FakeResponse(file_data.get(name, b""))
+
+    monkeypatch.setattr("nemora.ingest.faib.urlopen", fake_urlopen)
+
+    downloaded = download_faib_csvs(tmp_path, dataset="psp")
+    assert len(downloaded) == 2
+    assert (tmp_path / "faib_tree_detail.csv").exists()
+    assert urls_requested[0].endswith("psp/")

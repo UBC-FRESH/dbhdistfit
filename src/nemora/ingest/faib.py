@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import io
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.request import urlopen
 
 import numpy as np
 import pandas as pd
@@ -26,6 +27,7 @@ __all__ = [
     "load_non_psp_dictionary",
     "aggregate_stand_table",
     "build_stand_table_from_csvs",
+    "download_faib_csvs",
     "PSP_DICTIONARY_URL",
     "NON_PSP_DICTIONARY_URL",
 ]
@@ -49,8 +51,6 @@ class DataDictionary:
 def load_data_dictionary(url: str) -> DataDictionary:
     """Download and parse a FAIB data dictionary XLSX file."""
     if url.startswith("ftp://"):
-        from urllib.request import urlopen
-
         with urlopen(url) as fh:  # noqa: S310 - FAIB publishes public datasets here
             buffer = io.BytesIO(fh.read())
         sheets = pd.read_excel(buffer, sheet_name=None, engine="openpyxl")
@@ -164,3 +164,49 @@ def build_stand_table_from_csvs(
     tree_detail = pd.read_csv(tree_path)
     sample_byvisit = pd.read_csv(sample_path)
     return aggregate_stand_table(tree_detail, sample_byvisit, baf=baf)
+
+
+def _list_ftp_files(directory: str) -> Iterable[str]:
+    with urlopen(directory) as fh:  # noqa: S310 - FAIB FTP host
+        listing = fh.read().decode("utf-8", errors="ignore")
+    lines = listing.strip().splitlines()
+    names = []
+    for line in lines:
+        parts = line.split()
+        if parts:
+            names.append(parts[-1])
+    return names
+
+
+def download_faib_csvs(destination: str | Path, dataset: str = "psp") -> list[Path]:
+    """Download FAIB CSV extracts via FTP into ``destination``.
+
+    Parameters
+    ----------
+    destination:
+        Directory where files will be written.
+    dataset:
+        Either ``"psp"`` or ``"non_psp"``.
+    """
+
+    if dataset not in {"psp", "non_psp"}:
+        raise ValueError("dataset must be 'psp' or 'non_psp'.")
+
+    base = "ftp://ftp.for.gov.bc.ca/HTS/external/!publish/ground_plot_compilations/" f"{dataset}/"
+    target = Path(destination)
+    target.mkdir(parents=True, exist_ok=True)
+
+    files = _list_ftp_files(base)
+    to_fetch = [name for name in files if name.endswith(".csv")]
+    downloaded: list[Path] = []
+
+    for name in to_fetch:
+        url = base + name
+        dest = target / name
+        if dest.exists():
+            downloaded.append(dest)
+            continue
+        with urlopen(url) as fh:  # noqa: S310 - FAIB FTP host
+            dest.write_bytes(fh.read())
+        downloaded.append(dest)
+    return downloaded

@@ -99,6 +99,9 @@ Nemora exposes an early CLI stub for PSP stand tables:
 
 ```bash
 nemora ingest-faib tests/fixtures/faib --baf 12 --output stand_table.csv
+
+# Fetch PSP extracts and write output
+nemora ingest-faib data/external/faib --baf 12 --fetch --dataset psp --output stand_table.csv
 ```
 
 The command expects pre-downloaded FAIB CSV extracts; future versions will
