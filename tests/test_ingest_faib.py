@@ -3,7 +3,15 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from nemora.ingest.faib import DataDictionary, load_data_dictionary
+from nemora.ingest.faib import (
+    NON_PSP_DICTIONARY_URL,
+    PSP_DICTIONARY_URL,
+    DataDictionary,
+    aggregate_stand_table,
+    load_data_dictionary,
+    load_non_psp_dictionary,
+    load_psp_dictionary,
+)
 
 
 def test_load_data_dictionary_from_local(tmp_path: Path) -> None:
@@ -25,3 +33,47 @@ def test_load_data_dictionary_from_ftp() -> None:
         "PSP_data_dictionary_20250514.xlsx"
     )
     assert "faib_plot_header" in dictionary.sheets
+
+
+def test_dictionary_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
+    called: list[str] = []
+
+    def fake_loader(url: str) -> DataDictionary:
+        called.append(url)
+        return DataDictionary({"demo": pd.DataFrame({"Attribute": ["col1"]})})
+
+    monkeypatch.setattr("nemora.ingest.faib.load_data_dictionary", fake_loader)
+
+    psp_dict = load_psp_dictionary()
+    assert psp_dict.get_table_schema("demo").shape == (1, 1)
+    non_psp_dict = load_non_psp_dictionary()
+    assert non_psp_dict.get_table_schema("demo").shape == (1, 1)
+
+    assert called == [PSP_DICTIONARY_URL, NON_PSP_DICTIONARY_URL]
+
+
+def test_aggregate_stand_table() -> None:
+    tree_detail = pd.DataFrame(
+        {
+            "CLSTR_ID": ["A", "A", "B"],
+            "VISIT_NUMBER": [1, 1, 1],
+            "PLOT": [1, 1, 1],
+            "DBH_CM": [12.4, 24.8, 10.2],
+            "TREE_EXP": [3.0, 2.0, 4.0],
+        }
+    )
+    sample_byvisit = pd.DataFrame(
+        {
+            "CLSTR_ID": ["A", "B"],
+            "VISIT_NUMBER": [1, 1],
+            "PLOT": [1, 1],
+            "BAF": [12.0, 8.0],
+        }
+    )
+
+    stand_table = aggregate_stand_table(tree_detail, sample_byvisit, baf=12.0)
+    assert list(stand_table["dbh_cm"]) == [12.0, 25.0]
+    assert list(stand_table["tally"]) == [3.0, 2.0]
+
+    empty = aggregate_stand_table(tree_detail, sample_byvisit, baf=20.0)
+    assert empty.empty

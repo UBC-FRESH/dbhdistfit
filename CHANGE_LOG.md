@@ -93,3 +93,4 @@
 - Documented the FAIB Shiny portal/FTP bulk download locations in the ingest how-to and noted the accompanying data dictionaries that guide column interpretation.
 - Prototyped `nemora.sampling` utilities (`pdf_to_cdf`, `sample_distribution`, `sample_mixture_fit`, `bootstrap_inventory`) with smoke tests and documentation, and re-exported the module via `nemora.__init__`.
 - Noted FAIB PSP/non-PSP FTP endpoints in the ingest plan, added tasks to parse the accompanying data dictionaries, and updated the how-to guide to point at both sources.
+- Added FAIB ingest helpers (`load_psp_dictionary`, `load_non_psp_dictionary`, `aggregate_stand_table`) with regression coverage to transform tree detail tables into Nemora stand tables.
