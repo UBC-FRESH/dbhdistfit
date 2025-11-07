@@ -41,6 +41,11 @@ See [`notes/nemora_modular_reorg_plan.md`](notes/nemora_modular_reorg_plan.md) f
 timeline, sequencing, and dependencies. The plan mirrors the table above and is the source of
 truth for day-to-day work.
 
+## Documentation
+
+Live documentation is published on Read the Docs: https://nemora.readthedocs.io/en/latest/
+The site tracks the main branch and will expand as new modules come online.
+
 ## Relationship to Other Toolkits
 
 - **ForestFit (R)** – Nemora borrows ideas from the ForestFit literature and logs planned imports in
