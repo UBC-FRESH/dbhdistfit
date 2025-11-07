@@ -1,7 +1,7 @@
 # Sampling Module Outline
 
 Date: 2025-11-07
-Status: Draft — first pass at `nemora.sampling` interfaces.
+Status: In progress — core helpers implemented; benchmarking/stability reviews pending.
 
 ## Goals
 

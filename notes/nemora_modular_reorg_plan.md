@@ -48,8 +48,8 @@ src/nemora/
    - [ ] Verify FTP access to FAIB PSP/non-PSP datasets and capture download instructions/DataLad strategy.
 
 5. **Sampling engine (`nemora.sampling`)**
-   - [ ] Catalogue existing sampling utilities (mixtures, truncated normals, etc.) and migrate next.
-   - [ ] Provide PDF → CDF inversion (analytic + numeric), bootstrap/Monte Carlo generators, and integrate with the central distribution registry.
+   - [x] Catalogue existing sampling utilities (mixtures, truncated normals, etc.) and migrate next.
+   - [x] Provide PDF → CDF inversion (analytic + numeric), bootstrap/Monte Carlo generators, and integrate with the central distribution registry.
    - [ ] Benchmark accuracy and ensure compatibility with `distfit` outputs.
 
 6. **Synthetic forest generation (`nemora.synthforest`)**

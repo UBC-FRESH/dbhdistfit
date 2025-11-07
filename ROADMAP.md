@@ -23,9 +23,9 @@ date, check `notes/nemora_modular_reorg_plan.md` for the latest detail.
   - [ ] Document extension points, add user-facing registry helpers.
   - [ ] Move remaining distribution metadata (bounds, defaults) from ad-hoc code.
 - `nemora.sampling`
-  - [ ] Implement PDF→CDF inversion (analytic + numeric).
-  - [ ] Provide bootstrap / Monte Carlo sampling utilities & tests.
-  - [ ] Integrate mixture helpers with distfit outputs.
+  - [x] Implement PDF→CDF inversion (analytic + numeric).
+  - [x] Provide bootstrap / Monte Carlo sampling utilities & tests.
+  - [x] Integrate mixture helpers with distfit outputs.
 - `nemora.ingest`
   - [ ] Design abstraction for raw inventory sources (`DatasetSource`, `TransformPipeline`).
   - [ ] Port existing scripts (HPS dataset prep) into pipelines.
