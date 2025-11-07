@@ -147,6 +147,10 @@ table = build_stand_table_from_csvs(
 )
 print(table.head())
 PY
+
+# Aggregate FIA stand tables via CLI (trimmed fixtures example)
+nemora ingest-fia tests/fixtures/fia --tree-file tree_small.csv --cond-file cond_small.csv \
+  --plot-file plot_small.csv --plot-cn 47825261010497 --plot-cn 47825253010497 --output fia_sample.csv
 ```
 
 The command expects pre-downloaded FAIB CSV extracts; future versions will

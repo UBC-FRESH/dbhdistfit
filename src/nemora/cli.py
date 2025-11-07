@@ -20,10 +20,13 @@ from .distributions import get_distribution, list_distributions
 from .ingest.faib import (
     FAIBManifestResult,
     auto_select_bafs,
-    build_stand_table_from_csvs,
     download_faib_csvs,
     generate_faib_manifest,
 )
+from .ingest.faib import (
+    build_stand_table_from_csvs as build_faib_stand_table,
+)
+from .ingest.fia import build_stand_table_from_csvs as build_fia_stand_table
 from .workflows.hps import fit_hps_inventory
 
 app = typer.Typer(help="Nemora distribution fitting CLI (distfit alpha).")
@@ -182,6 +185,59 @@ FAIB_MAX_ROWS_OPTION = typer.Option(
 )
 
 
+FIA_ROOT_ARGUMENT = typer.Argument(
+    ...,
+    exists=True,
+    file_okay=False,
+    dir_okay=True,
+    readable=True,
+    help="Directory containing FIA CSV extracts (TREE.csv, COND.csv, PLOT.csv).",
+)
+
+FIA_OUTPUT_OPTION = typer.Option(
+    None,
+    "--output",
+    "-o",
+    help="Optional path to write the aggregated stand table CSV.",
+    show_default=False,
+)
+
+FIA_TREE_FILE_OPTION = typer.Option(
+    "TREE.csv",
+    "--tree-file",
+    help="Name of the FIA TREE CSV file inside the root directory.",
+    show_default=True,
+)
+
+FIA_COND_FILE_OPTION = typer.Option(
+    "COND.csv",
+    "--cond-file",
+    help="Name of the FIA COND CSV file inside the root directory.",
+    show_default=True,
+)
+
+FIA_PLOT_FILE_OPTION = typer.Option(
+    "PLOT.csv",
+    "--plot-file",
+    help="Name of the FIA PLOT CSV file inside the root directory.",
+    show_default=True,
+)
+
+FIA_PLOT_CN_OPTION = typer.Option(
+    None,
+    "--plot-cn",
+    help="Filter to specific FIA plot CNs (repeatable).",
+    show_default=False,
+)
+
+FIA_DBH_BIN_OPTION = typer.Option(
+    1.0,
+    "--dbh-bin-cm",
+    help="DBH bin width in centimetres used for aggregation.",
+    show_default=True,
+)
+
+
 @app.callback(invoke_without_command=True)
 def cli_callback(  # noqa: B008
     ctx: typer.Context,
@@ -321,7 +377,7 @@ def ingest_faib(  # noqa: B008
         raise typer.Exit()
 
     try:
-        stand_table = build_stand_table_from_csvs(target_root, baf, plot_file=plot_file)
+        stand_table = build_faib_stand_table(target_root, baf, plot_file=plot_file)
     except Exception as exc:
         console.print(f"[red]Failed to build stand table:[/red] {exc}")
         raise typer.Exit(code=1) from exc
@@ -392,6 +448,50 @@ def faib_manifest(  # noqa: B008
     for table in result.tables:
         status = "truncated" if result.truncated_flags.get(table, False) else "full"
         console.print(f"  • {table.name} ({status})")
+
+
+@app.command("ingest-fia")
+def ingest_fia(  # noqa: B008
+    root: Path = FIA_ROOT_ARGUMENT,
+    output: Path | None = FIA_OUTPUT_OPTION,
+    plot_cn: list[int] = FIA_PLOT_CN_OPTION,
+    tree_file: str = FIA_TREE_FILE_OPTION,
+    cond_file: str = FIA_COND_FILE_OPTION,
+    plot_file: str = FIA_PLOT_FILE_OPTION,
+    dbh_bin_cm: float = FIA_DBH_BIN_OPTION,
+) -> None:
+    """Aggregate FIA TREE/COND/PLOT CSV extracts into a stand table."""
+
+    import pandas as pd
+
+    targets: list[int | None] = list(plot_cn) if plot_cn else [None]
+    frames: list[pd.DataFrame] = []
+    for target in targets:
+        frame = build_fia_stand_table(
+            root,
+            plot_cn=target,
+            tree_file=tree_file,
+            cond_file=cond_file,
+            plot_file=plot_file,
+            dbh_bin_cm=dbh_bin_cm,
+        )
+        if frame.empty:
+            continue
+        frames.append(frame)
+
+    if not frames:
+        console.print("[yellow]No FIA records matched the provided filters.[/yellow]")
+        raise typer.Exit()
+
+    result = pd.concat(frames, ignore_index=True)
+    if output is not None:
+        result.to_csv(output, index=False)
+        console.print(
+            f"[green]Stand table written[/green] {output} "
+            f"(rows={len(result)}, plots={result['plot_cn'].nunique()})"
+        )
+    else:
+        console.print(result.head())
 
 
 def main_entry() -> None:

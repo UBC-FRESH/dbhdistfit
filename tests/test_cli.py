@@ -284,6 +284,35 @@ def test_faib_manifest_command(tmp_path: Path) -> None:
     assert not df.empty
 
 
+def test_ingest_fia_command(tmp_path: Path) -> None:
+    fixtures = Path("tests/fixtures/fia")
+    output = tmp_path / "fia.csv"
+
+    result = runner.invoke(
+        app,
+        [
+            "ingest-fia",
+            str(fixtures),
+            "--tree-file",
+            "tree_small.csv",
+            "--cond-file",
+            "cond_small.csv",
+            "--plot-file",
+            "plot_small.csv",
+            "--plot-cn",
+            "47825261010497",
+            "--plot-cn",
+            "47825253010497",
+            "--output",
+            str(output),
+        ],
+    )
+    assert result.exit_code == 0
+    assert output.exists()
+    df = pd.read_csv(output)
+    assert df["plot_cn"].nunique() == 2
+
+
 def test_fetch_reference_data_dry_run_message() -> None:
     result = runner.invoke(app, ["fetch-reference-data"])  # default dry-run
     assert result.exit_code == 0

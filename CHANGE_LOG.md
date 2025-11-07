@@ -142,3 +142,9 @@
 - Trimmed the Hawaii FIA sample into lightweight fixtures (`tests/fixtures/fia/`) with accompanying README/licensing notes, enabling deterministic tests without full DATAMART downloads.
 - Updated `tests/test_ingest_fia.py` to consume the fixtures, parameterise per-plot checks, and verify dead trees are excluded from stand tables; added documentation and pipeline outline updates to reflect the new assets.
 - Tests: `ruff check`, `mypy src`, `pytest`.
+
+## 2025-11-07 — FIA ingest CLI prototype
+
+- Added `nemora ingest-fia` Typer command with options for custom TREE/COND/PLOT filenames, plot CN filters, DBH bin width, and optional CSV output; aggregates via the new FIA helper.
+- Documented the CLI workflow and furnished CLI regression coverage (`tests/test_cli.py::test_ingest_fia_command`).
+- Tests executed: `ruff check`, `mypy src`, `pytest`.
