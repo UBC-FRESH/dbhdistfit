@@ -72,6 +72,7 @@ src/nemora/
    - [ ] Produce module overview pages (how-to + API reference) as modules mature.
    - [ ] Update README/changelog with reorganised scope and module descriptions.
    - [ ] Draft notes highlighting the project’s early stage but rapid iteration plan (distfit alpha quickly, other modules phased later).
+   - [ ] Flesh out ingest API narrative (overview of DatasetSource/TransformPipeline, CLI cross-links, dataset helper summaries).
 
 10. **Testing & CI strategy**
     - [ ] Expand unit/integration tests per module; keep coverage gating distfit alpha milestone.
