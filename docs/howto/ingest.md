@@ -215,11 +215,15 @@ nemora ingest-faib data/external/faib --auto-bafs --fetch --dataset psp
 nemora faib-manifest data/external/faib/manifest_psp --auto-bafs --auto-count 3
 # Reuse an existing download, skip fetch, and limit each stand table to 200 rows
 nemora faib-manifest examples/faib_manifest --source tests/fixtures/faib --no-fetch --baf 12 --max-rows 200
+# Produce both CSV and Parquet manifest outputs for downstream analytics
+nemora faib-manifest data/external/faib/manifest_psp --parquet
 
 # Prepare HPS tallies and manifest (no download, reusing cached CSVs)
 nemora ingest-faib-hps data/external/faib --no-fetch --output data/examples/hps_baf12
 # Download PSP extracts to a cache directory and write outputs to the examples folder
 nemora ingest-faib-hps data/external/faib --cache-dir data/external/psp/raw --output data/examples/hps_baf12 --fetch
+# Benchmark the HPS pipeline (timing only, no output)
+nemora ingest-benchmark data/external/faib --no-fetch --iterations 5
 
 # Generate trimmed fixtures + manifest (used in tests)
 python scripts/generate_faib_manifest.py examples/faib_manifest --dataset psp

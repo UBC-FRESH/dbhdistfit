@@ -477,6 +477,7 @@ def generate_faib_manifest(
     bafs: Sequence[float] | None = None,
     auto_count: int | None = None,
     max_rows: int | None = None,
+    write_parquet: bool = False,
 ) -> FAIBManifestResult:
     """Fetch FAIB extracts, build stand tables, and emit a manifest.
 
@@ -554,6 +555,8 @@ def generate_faib_manifest(
     manifest = pd.DataFrame(records)
     manifest_path = dest_path / "faib_manifest.csv"
     manifest.to_csv(manifest_path, index=False)
+    if write_parquet:
+        manifest.to_parquet(dest_path / "faib_manifest.parquet", index=False)
     return FAIBManifestResult(
         manifest_path=manifest_path,
         tables=tables,

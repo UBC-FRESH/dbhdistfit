@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import math
 import numbers
+import statistics
 import subprocess
+import time
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -16,6 +18,7 @@ from rich.console import Console
 from rich.table import Table
 
 from . import __version__
+from .dataprep import PlotSelection
 from .distributions import get_distribution, list_distributions
 from .ingest.faib import (
     FAIBManifestResult,
@@ -40,11 +43,12 @@ from .ingest.hps import (
     DEFAULT_TREE_DETAIL as HPS_DEFAULT_TREE_DETAIL,
 )
 from .ingest.hps import (
-    SelectionCriteria as HPSelectionCriteria,
-)
-from .ingest.hps import (
+    HPSPipelineResult,
     export_hps_outputs,
     run_hps_pipeline,
+)
+from .ingest.hps import (
+    SelectionCriteria as HPSelectionCriteria,
 )
 from .ingest.hps import (
     load_plot_selections as load_hps_plot_selections,
@@ -53,6 +57,74 @@ from .workflows.hps import fit_hps_inventory
 
 app = typer.Typer(help="Nemora distribution fitting CLI (distfit alpha).")
 console = Console()
+
+
+def _prepare_hps_inputs(
+    root: Path,
+    *,
+    fetch: bool,
+    cache_dir: Path,
+    overwrite: bool,
+    baf: float,
+    plot_header_file: str,
+    sample_byvisit_file: str,
+    tree_detail_file: str,
+    encoding: str,
+    include_all_visits: bool,
+    sample_types: list[str],
+    max_plots: int | None,
+    quiet: bool,
+) -> tuple[list[PlotSelection], Path]:
+    """Fetch required FAIB inputs and return selections with the tree detail path."""
+
+    target_root = root
+    if fetch:
+        destination = cache_dir or root
+        dataset = build_faib_dataset_source(
+            "psp",
+            destination=destination,
+            filenames=(plot_header_file, sample_byvisit_file, tree_detail_file),
+            overwrite=overwrite,
+        )
+        try:
+            downloaded = list(dataset.fetch())
+        except Exception as exc:  # noqa: BLE001
+            console.print(f"[red]Failed to download FAIB PSP files:[/red] {exc}")
+            raise typer.Exit(code=1) from exc
+        target_root = destination
+        if not quiet and downloaded:
+            console.print(
+                f"[green]Prepared[/green] {len(downloaded)} files in {destination} "
+                f"(overwrite={overwrite})"
+            )
+
+    plot_header_path = target_root / plot_header_file
+    sample_byvisit_path = target_root / sample_byvisit_file
+    tree_detail_path = target_root / tree_detail_file
+
+    missing = [
+        str(path)
+        for path in (plot_header_path, sample_byvisit_path, tree_detail_path)
+        if not path.exists()
+    ]
+    if missing:
+        console.print("[red]Missing required FAIB PSP files:[/red] " + ", ".join(missing))
+        raise typer.Exit(code=1)
+
+    criteria = HPSelectionCriteria(
+        first_visit_only=not include_all_visits,
+        allowed_sample_types=tuple(sample_types) if sample_types else None,
+        max_plots=max_plots,
+    )
+    selections = load_hps_plot_selections(
+        plot_header_path,
+        sample_byvisit_path,
+        baf=baf,
+        criteria=criteria,
+        encoding=encoding,
+    )
+    return selections, tree_detail_path
+
 
 DBH_FILE_ARGUMENT = typer.Argument(
     ...,
@@ -583,6 +655,12 @@ def faib_manifest(  # noqa: B008
     auto_bafs: bool = FAIB_AUTO_BAF_OPTION,
     auto_count: int = FAIB_AUTO_COUNT_OPTION,
     max_rows: int | None = FAIB_MAX_ROWS_OPTION,
+    parquet: bool = typer.Option(
+        False,
+        "--parquet/--no-parquet",
+        help="Write a Parquet copy of the manifest in addition to CSV.",
+        show_default=True,
+    ),
 ) -> None:
     """Fetch FAIB extracts, generate stand tables, and emit a manifest CSV."""
 
@@ -611,6 +689,7 @@ def faib_manifest(  # noqa: B008
             bafs=bafs,
             auto_count=auto_count if auto_bafs else None,
             max_rows=max_rows,
+            write_parquet=parquet,
         )
     except Exception as exc:  # noqa: BLE001
         console.print(f"[red]Failed to build manifest:[/red] {exc}")
@@ -625,6 +704,9 @@ def faib_manifest(  # noqa: B008
         "[green]Manifest generated:[/green] "
         f"{result.manifest_path} (BAFs={', '.join(f'{b:.4f}' for b in result.bafs)})"
     )
+    if parquet:
+        parquet_path = result.manifest_path.with_suffix(".parquet")
+        console.print(f"[green]Parquet manifest written[/green] {parquet_path}")
     for table in result.tables:
         status = "truncated" if result.truncated_flags.get(table, False) else "full"
         console.print(f"  • {table.name} ({status})")
@@ -655,51 +737,20 @@ def ingest_faib_hps(  # noqa: B008
 ) -> None:
     """Prepare HPS tallies from FAIB PSP extracts."""
 
-    target_root = root
-    if fetch:
-        destination = cache_dir or root
-        try:
-            dataset = build_faib_dataset_source(
-                "psp",
-                destination=destination,
-                filenames=(plot_header_file, sample_byvisit_file, tree_detail_file),
-                overwrite=overwrite,
-            )
-            downloaded = list(dataset.fetch())
-        except Exception as exc:  # noqa: BLE001
-            console.print(f"[red]Failed to download FAIB PSP files:[/red] {exc}")
-            raise typer.Exit(code=1) from exc
-        target_root = destination
-        if not quiet:
-            console.print(
-                f"[green]Prepared[/green] {len(downloaded)} files in {destination} "
-                f"(overwrite={overwrite})"
-            )
-
-    plot_header_path = target_root / plot_header_file
-    sample_byvisit_path = target_root / sample_byvisit_file
-    tree_detail_path = target_root / tree_detail_file
-
-    missing = [
-        str(path)
-        for path in (plot_header_path, sample_byvisit_path, tree_detail_path)
-        if not path.exists()
-    ]
-    if missing:
-        console.print("[red]Missing required FAIB PSP files:[/red] " + ", ".join(missing))
-        raise typer.Exit(code=1)
-
-    criteria = HPSelectionCriteria(
-        first_visit_only=not include_all_visits,
-        allowed_sample_types=tuple(sample_type) if sample_type else None,
-        max_plots=max_plots,
-    )
-    selections = load_hps_plot_selections(
-        plot_header_path,
-        sample_byvisit_path,
+    selections, tree_detail_path = _prepare_hps_inputs(
+        root,
+        fetch=fetch,
+        cache_dir=cache_dir,
+        overwrite=overwrite,
         baf=baf,
-        criteria=criteria,
+        plot_header_file=plot_header_file,
+        sample_byvisit_file=sample_byvisit_file,
+        tree_detail_file=tree_detail_file,
         encoding=encoding,
+        include_all_visits=include_all_visits,
+        sample_types=sample_type,
+        max_plots=max_plots,
+        quiet=quiet,
     )
     if not selections:
         console.print("[yellow]No PSP plots matched the provided filters.[/yellow]")
@@ -746,6 +797,101 @@ def ingest_faib_hps(  # noqa: B008
         console.print(
             f"[green]Prepared[/green] {plot_count} plots with {total_trees} live trees → {output}"
         )
+
+
+@app.command("ingest-benchmark")
+def ingest_benchmark(  # noqa: B008
+    root: Path = FAIB_ROOT_ARGUMENT,
+    iterations: int = typer.Option(
+        3,
+        "--iterations",
+        "-n",
+        help="Number of times to execute the HPS pipeline for timing.",
+        min=1,
+        show_default=True,
+    ),
+    fetch: bool = FAIB_HPS_FETCH_OPTION,
+    cache_dir: Path = FAIB_HPS_CACHE_OPTION,
+    overwrite: bool = FAIB_HPS_OVERWRITE_OPTION,
+    baf: float = FAIB_HPS_BAF_OPTION,
+    bin_width: float = FAIB_HPS_BIN_WIDTH_OPTION,
+    bin_origin: float = FAIB_HPS_BIN_ORIGIN_OPTION,
+    chunk_size: int = FAIB_HPS_CHUNK_OPTION,
+    status: list[str] = FAIB_HPS_STATUS_OPTION,
+    include_all_visits: bool = FAIB_HPS_INCLUDE_ALL_VISITS_OPTION,
+    sample_type: list[str] = FAIB_HPS_SAMPLE_TYPE_OPTION,
+    max_plots: int | None = FAIB_HPS_MAX_PLOTS_OPTION,
+    encoding: str = FAIB_HPS_ENCODING_OPTION,
+    plot_header_file: str = FAIB_HPS_PLOT_HEADER_OPTION,
+    sample_byvisit_file: str = FAIB_HPS_SAMPLE_BYVISIT_OPTION,
+    tree_detail_file: str = FAIB_HPS_TREE_DETAIL_OPTION,
+) -> None:
+    """Benchmark the FAIB→HPS pipeline without writing outputs."""
+
+    selections, tree_detail_path = _prepare_hps_inputs(
+        root,
+        fetch=fetch,
+        cache_dir=cache_dir,
+        overwrite=overwrite,
+        baf=baf,
+        plot_header_file=plot_header_file,
+        sample_byvisit_file=sample_byvisit_file,
+        tree_detail_file=tree_detail_file,
+        encoding=encoding,
+        include_all_visits=include_all_visits,
+        sample_types=sample_type,
+        max_plots=max_plots,
+        quiet=False,
+    )
+    if not selections:
+        console.print("[yellow]No PSP plots matched the provided filters.[/yellow]")
+        raise typer.Exit(code=1)
+
+    live_status = tuple(status) if status else ("L",)
+    durations: list[float] = []
+    final_result: HPSPipelineResult | None = None
+    for iteration in range(iterations):
+        start = time.perf_counter()
+        final_result = run_hps_pipeline(
+            tree_detail_path,
+            selections,
+            dbh_column="DBH",
+            status_column="LV_D",
+            live_status=live_status,
+            bin_width=bin_width,
+            bin_origin=bin_origin,
+            chunk_size=chunk_size,
+            encoding=encoding,
+        )
+        durations.append(time.perf_counter() - start)
+        console.print(
+            f"[blue]Iteration {iteration + 1}/{iterations}[/blue]: {durations[-1]:.3f}s",
+            highlight=False,
+        )
+
+    assert final_result is not None  # for mypy
+    manifest = final_result.manifest
+    tree_total = int(manifest["trees"].sum()) if not manifest.empty else 0
+    avg = statistics.mean(durations)
+    fastest = min(durations)
+    slowest = max(durations)
+
+    table = Table(title="HPS Pipeline Benchmark", show_edge=True)
+    table.add_column("Runs", justify="right")
+    table.add_column("Average (s)", justify="right")
+    table.add_column("Fastest (s)", justify="right")
+    table.add_column("Slowest (s)", justify="right")
+    table.add_row(
+        str(iterations),
+        f"{avg:.3f}",
+        f"{fastest:.3f}",
+        f"{slowest:.3f}",
+    )
+    console.print(table)
+    console.print(
+        f"[green]Tree total:[/green] {tree_total} "
+        f"(plots={len(final_result.tallies)}, live_status={', '.join(live_status)})"
+    )
 
 
 @app.command("ingest-fia")

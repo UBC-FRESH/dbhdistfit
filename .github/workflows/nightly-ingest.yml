@@ -42,6 +42,14 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
+          LABEL="nightly-ingest-failure"
+          if ! gh label list --repo "${{ github.repository }}" --limit 200 | grep -q "^$LABEL"; then
+            gh label create "$LABEL" \
+              --repo "${{ github.repository }}" \
+              --color F97316 \
+              --description "Nightly ingest workflow failure tracker" \
+              || echo "Label $LABEL already exists or could not be created."
+          fi
           TITLE="Nightly ingest integration failed (#${{ github.run_number }})"
           BODY=$(cat <<'EOF'
           #### Nightly ingest integration workflow failed
@@ -57,4 +65,5 @@ jobs:
             --repo "${{ github.repository }}" \
             --title "$TITLE" \
             --body "${BODY//\$RUN_URL/$RUN_URL}" \
+            --label "$LABEL" \
             || echo "Issue already exists or creation failed."

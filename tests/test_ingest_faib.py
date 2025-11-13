@@ -321,12 +321,17 @@ def test_generate_faib_manifest(tmp_path: Path) -> None:
         fetch=False,
         bafs=[12.0],
         max_rows=10,
+        write_parquet=True,
     )
     assert result.manifest_path.exists()
     assert len(result.tables) == 1
     assert result.tables[0].exists()
     manifest = pd.read_csv(result.manifest_path)
     assert set(manifest.columns) == {"dataset", "baf", "rows", "path", "truncated"}
+    parquet_path = result.manifest_path.with_suffix(".parquet")
+    assert parquet_path.exists()
+    parquet_manifest = pd.read_parquet(parquet_path)
+    assert len(parquet_manifest) == len(manifest)
 
 
 def test_build_faib_dataset_source(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

@@ -283,6 +283,7 @@ def test_faib_manifest_command(tmp_path: Path) -> None:
             "12",
             "--max-rows",
             "10",
+            "--parquet",
         ],
     )
     assert result.exit_code == 0
@@ -290,6 +291,8 @@ def test_faib_manifest_command(tmp_path: Path) -> None:
     assert manifest.exists()
     df = pd.read_csv(manifest)
     assert not df.empty
+    parquet_manifest = destination / "faib_manifest.parquet"
+    assert parquet_manifest.exists()
 
 
 def _write_hps_cli_fixtures(base: Path) -> None:
@@ -355,6 +358,30 @@ def test_ingest_faib_hps_command(tmp_path: Path) -> None:
     assert result.exit_code == 0
     assert manifest_path.exists()
     assert any(output_dir.glob("*.csv"))
+
+
+def test_ingest_benchmark_command(tmp_path: Path) -> None:
+    data_dir = tmp_path / "raw"
+    _write_hps_cli_fixtures(data_dir)
+
+    result = runner.invoke(
+        app,
+        [
+            "ingest-benchmark",
+            str(data_dir),
+            "--no-fetch",
+            "--plot-header-file",
+            "faib_plot_header.csv",
+            "--sample-byvisit-file",
+            "faib_sample_byvisit.csv",
+            "--tree-detail-file",
+            "faib_tree_detail.csv",
+            "--iterations",
+            "2",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "HPS Pipeline Benchmark" in result.stdout
 
 
 def test_ingest_fia_command(tmp_path: Path) -> None:

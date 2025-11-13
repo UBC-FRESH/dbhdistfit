@@ -108,3 +108,4 @@ src/nemora/
 
 1. Land nightly FAIB/FIA ingest integration workflow via GitHub Actions (exports `NEMORA_RUN_FAIB_INTEGRATION` / `NEMORA_RUN_FIA_INTEGRATION`, runs targeted pytest selection, surfaces failures via Actions notifications). *(Roadmap Phase 2, Detailed Next Steps — add under ingest.)*
 2. Draft ingest module API docs to sit alongside the how-to guide and keep module parity visible. *(Docs/communication workstream, Roadmap Phase 2.)*
+3. Scope next ingest enhancements: FAIB manifest parquet export + sampling benchmarking hooks for ingest outputs.
