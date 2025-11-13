@@ -9,6 +9,9 @@ jobs:
   live-download-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,3 +35,26 @@ jobs:
             tests/test_ingest_faib.py::test_build_faib_dataset_source_integration \
             tests/test_ingest_faib.py::test_download_faib_csvs_integration \
             tests/test_ingest_fia.py::test_download_fia_tables_integration
+      - name: Create GitHub issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="Nightly ingest integration failed (#${{ github.run_number }})"
+          BODY=$(cat <<'EOF'
+          #### Nightly ingest integration workflow failed
+
+          - Workflow: `Nightly Ingest Integration`
+          - Run: $RUN_URL
+          - Trigger: `${{ github.event_name }}`
+
+          Please review the logs to determine whether upstream FAIB/FIA schemas changed or if the failure is transient.
+          EOF
+          )
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "$TITLE" \
+            --body "${BODY//\$RUN_URL/$RUN_URL}" \
+            || echo "Issue already exists or creation failed."
