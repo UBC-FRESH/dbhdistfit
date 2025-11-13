@@ -197,25 +197,33 @@ def test_ingest_faib_command_with_fetch(monkeypatch: pytest.MonkeyPatch, tmp_pat
     cache_dir = tmp_path / "cache"
     output = tmp_path / "out.csv"
 
-    def fake_download(
-        destination: Path,
+    def fake_build(
         dataset: str,
         *,
+        destination: Path,
         overwrite: bool = False,
-        filenames: list[str] | None = None,
-    ) -> list[Path]:
+    ):
         destination.mkdir(parents=True, exist_ok=True)
-        (destination / "faib_tree_detail.csv").write_text(
+        tree_path = destination / "faib_tree_detail.csv"
+        sample_path = destination / "faib_sample_byvisit.csv"
+        tree_path.write_text(
             "CLSTR_ID,VISIT_NUMBER,PLOT,DBH_CM,TREE_EXP\nA,1,1,12.0,2\n",
             encoding="utf-8",
         )
-        (destination / "faib_sample_byvisit.csv").write_text(
+        sample_path.write_text(
             "CLSTR_ID,VISIT_NUMBER,PLOT,BAF\nA,1,1,12\n",
             encoding="utf-8",
         )
-        return [destination / "faib_tree_detail.csv", destination / "faib_sample_byvisit.csv"]
 
-    monkeypatch.setattr("nemora.cli.download_faib_csvs", fake_download)
+        class _FakeSource:
+            metadata: dict[str, object] = {}
+
+            def fetch(self) -> list[Path]:
+                return [tree_path, sample_path]
+
+        return _FakeSource()
+
+    monkeypatch.setattr("nemora.cli.build_faib_dataset_source", fake_build)
 
     result = runner.invoke(
         app,

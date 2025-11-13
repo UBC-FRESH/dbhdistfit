@@ -7,6 +7,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from ftplib import FTP
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
@@ -29,6 +30,8 @@ __all__ = [
     "load_non_psp_dictionary",
     "aggregate_stand_table",
     "build_stand_table_from_csvs",
+    "build_faib_stand_table_pipeline",
+    "build_faib_dataset_source",
     "download_faib_csvs",
     "auto_select_bafs",
     "generate_faib_manifest",
@@ -36,6 +39,9 @@ __all__ = [
     "PSP_DICTIONARY_URL",
     "NON_PSP_DICTIONARY_URL",
 ]
+
+if TYPE_CHECKING:  # pragma: no cover
+    from . import DatasetSource, TransformPipeline
 
 
 @dataclass(slots=True)
@@ -199,14 +205,54 @@ def build_stand_table_from_csvs(
     )
     inferred_baf = baf_col or ("BAF" if "BAF" in plot_info.columns else "BLOWUP_MAIN")
 
-    return aggregate_stand_table(
-        tree_detail,
+    pipeline = build_faib_stand_table_pipeline(
         plot_info,
         baf=baf,
         dbh_col=inferred_dbh,
         expansion_col=inferred_expansion,
         baf_col=inferred_baf,
     )
+    return pipeline.run(tree_detail)
+
+
+def build_faib_stand_table_pipeline(
+    plot_info: pd.DataFrame,
+    *,
+    baf: float,
+    dbh_col: str,
+    expansion_col: str,
+    baf_col: str,
+    group_keys: tuple[str, ...] = ("CLSTR_ID", "VISIT_NUMBER", "PLOT"),
+) -> TransformPipeline:
+    """Create a :class:`TransformPipeline` that aggregates FAIB stand tables."""
+
+    from . import TransformPipeline  # imported lazily to avoid circular dependency
+
+    metadata = {
+        "baf": float(baf),
+        "dbh_col": dbh_col,
+        "expansion_col": expansion_col,
+        "baf_col": baf_col,
+        "group_keys": group_keys,
+    }
+
+    def _aggregate(frame: pd.DataFrame) -> pd.DataFrame:
+        return aggregate_stand_table(
+            frame,
+            plot_info,
+            baf=baf,
+            dbh_col=dbh_col,
+            expansion_col=expansion_col,
+            baf_col=baf_col,
+            group_keys=group_keys,
+        )
+
+    pipeline = TransformPipeline(
+        name=f"faib-stand-table-baf{_format_baf_slug(baf)}",
+        metadata=metadata,
+    )
+    pipeline.add_step(_aggregate)
+    return pipeline
 
 
 def auto_select_bafs(
@@ -342,6 +388,62 @@ def download_faib_csvs(
 
     ftp.quit()
     return downloaded
+
+
+def build_faib_dataset_source(
+    dataset: str = "psp",
+    *,
+    destination: str | Path,
+    filenames: Iterable[str] | None = None,
+    overwrite: bool = False,
+) -> DatasetSource:
+    """Create a :class:`DatasetSource` for FAIB CSV extracts."""
+
+    normalized_dataset = dataset.strip().lower()
+    if normalized_dataset not in {"psp", "non_psp"}:
+        raise ValueError("dataset must be 'psp' or 'non_psp'.")
+
+    normalized_filenames: tuple[str, ...] | None = None
+    if filenames is not None:
+        normalized_filenames = tuple(name.strip() for name in filenames)
+
+    dest_path = Path(destination)
+
+    from . import DatasetFetcher, DatasetSource  # imported lazily
+
+    def _fetch(_: DatasetSource) -> Iterable[Path]:
+        return download_faib_csvs(
+            dest_path,
+            dataset=normalized_dataset,
+            overwrite=overwrite,
+            filenames=normalized_filenames,
+        )
+
+    metadata = {
+        "dataset": normalized_dataset,
+        "destination": str(dest_path),
+        "filenames": list(normalized_filenames) if normalized_filenames is not None else None,
+        "overwrite": overwrite,
+    }
+    fetcher = cast(DatasetFetcher, _fetch)
+
+    name = f"faib-{normalized_dataset}"
+    uri = (
+        "ftp://ftp.for.gov.bc.ca/HTS/external/!publish/ground_plot_compilations/"
+        f"{'psp' if normalized_dataset == 'psp' else 'non_psp'}/"
+    )
+    description = (
+        "BC FAIB ground sample extracts " "(PSP dataset)"
+        if normalized_dataset == "psp"
+        else "BC FAIB non-PSP ground sample extracts"
+    )
+    return DatasetSource(
+        name=name,
+        description=description,
+        uri=uri,
+        metadata=metadata,
+        fetcher=fetcher,
+    )
 
 
 def _coerce_numeric(series: pd.Series, column: str) -> pd.Series:

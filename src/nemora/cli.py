@@ -20,12 +20,10 @@ from .distributions import get_distribution, list_distributions
 from .ingest.faib import (
     FAIBManifestResult,
     auto_select_bafs,
-    download_faib_csvs,
+    build_faib_dataset_source,
     generate_faib_manifest,
 )
-from .ingest.faib import (
-    build_stand_table_from_csvs as build_faib_stand_table,
-)
+from .ingest.faib import build_stand_table_from_csvs as build_faib_stand_table
 from .ingest.fia import (
     build_fia_dataset_source,
 )
@@ -375,7 +373,12 @@ def ingest_faib(  # noqa: B008
     if fetch:
         destination = cache_dir or root
         try:
-            downloaded = download_faib_csvs(destination, dataset=dataset, overwrite=overwrite)
+            dataset_source = build_faib_dataset_source(
+                dataset,
+                destination=destination,
+                overwrite=overwrite,
+            )
+            downloaded = list(dataset_source.fetch())
         except Exception as exc:
             console.print(f"[red]Download failed:[/red] {exc}")
             raise typer.Exit(code=1) from exc

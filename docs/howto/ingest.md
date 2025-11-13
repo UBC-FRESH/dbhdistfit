@@ -46,6 +46,32 @@ BC_FAIB_SOURCE = DatasetSource(
 When `BC_FAIB_SOURCE.fetch()` is invoked it delegates to `fetch_bc_faib`. Future
 connectors will implement authenticated fetchers and cache management.
 
+Nemora now provides first-class helpers for building these sources:
+
+```python
+from nemora.ingest.faib import build_faib_dataset_source
+from nemora.ingest.fia import build_fia_dataset_source
+
+faib_source = build_faib_dataset_source(
+    "psp",
+    destination="data/external/faib/raw",
+    overwrite=False,
+)
+fia_source = build_fia_dataset_source(
+    "HI",
+    destination="data/external/fia/raw",
+    tables=("TREE", "PLOT", "COND"),
+)
+
+# Trigger the downloads when required
+faib_files = list(faib_source.fetch())
+fia_files = list(fia_source.fetch())
+```
+
+Both helpers capture cache metadata (destination, filenames) in the resulting
+`DatasetSource.metadata`, making it easier to surface provenance in logs or CLI
+output.
+
 ## TransformPipeline
 
 `TransformPipeline` holds an ordered list of callables that accept/return
@@ -72,6 +98,30 @@ pipeline = TransformPipeline(
 pipeline.add_step(convert_units)
 pipeline.add_step(compute_stand_table)
 ```
+
+Ingest workflows can compose these pipelines with reusable helpers. For example,
+the FAIB stand-table implementation now exposes a dedicated pipeline builder:
+
+```python
+import pandas as pd
+
+from nemora.ingest.faib import build_faib_stand_table_pipeline
+
+tree_detail = pd.read_csv("data/external/faib/raw/faib_tree_detail.csv")
+plot_header = pd.read_csv("data/external/faib/raw/faib_plot_header.csv")
+
+pipeline = build_faib_stand_table_pipeline(
+    plot_header,
+    baf=12.0,
+    dbh_col="DBH_CM",
+    expansion_col="TREE_EXP",
+    baf_col="BLOWUP_MAIN",
+)
+stand_table = pipeline.run(tree_detail)
+```
+
+This mirrors the logic used by both the CLI and `generate_faib_manifest`, so
+tests and notebooks can share the same transformation sequence.
 
 ### Data dictionaries
 
@@ -155,6 +205,19 @@ nemora ingest-fia tests/fixtures/fia --tree-file tree_small.csv --cond-file cond
 
 The command expects pre-downloaded FAIB CSV extracts; future versions will
 bundle fetch/caching logic.
+
+### Caching guidelines
+
+- Use directories under `data/external/` for raw downloads (`faib/raw`, `fia/raw`,
+  etc.). They are already ignored by Git.
+- Prefer invoking `build_faib_dataset_source(...).fetch()` or
+  `build_fia_dataset_source(...).fetch()` from notebooks/scripts instead of
+  reimplementing download logic. The helpers enforce overwrite-safe `.part`
+  files and capture provenance in `DatasetSource.metadata`.
+- CLI commands pass through these helpers when `--fetch` or `--fetch-state` is
+  supplied; cached files are reused unless `--overwrite` is specified.
+- Document licences and terms of use alongside cached datasets (see
+  `tests/fixtures/faib/README.md` for an example template).
 
 ## Repository sample
 

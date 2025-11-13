@@ -42,12 +42,12 @@ src/nemora/
    - [x] Publish alpha documentation (module overview + API reference) and update README.
 
 4. **Ingestion / ETL (`nemora.ingest`) – Phase 2 kickoff**
-   - [x] Audit current scripts for reusable ETL logic (manifest generator, CLI wiring).
-   - [ ] Design `DatasetSource`, `RecordBatch`, `TransformPipeline` abstractions aligned with `nemora.core`.
-   - [ ] Implement key connectors (BC FAIB, FIA, etc.), add CLI helpers, and unit/integration tests against sample raw datasets. *(FAIB fetch + manifest CLI landed; FIA prototype helper + CLI fetch shipping; next: unify via DatasetSource fetchers and end-to-end automation.)*
-   - [x] Verify FTP access to FAIB PSP/non-PSP datasets and capture download instructions/DataLad strategy (caching helpers + env-gated integration test).
-   - [x] Parse FAIB PSP/non-PSP data dictionaries (XLSX) and surface schema metadata for ingest docs/tests.
-   - [ ] Flesh out FAIB ingest pipeline per `notes/ingest_pipeline_outline.md` (fetch, transform, output).
+- [x] Audit current scripts for reusable ETL logic (manifest generator, CLI wiring).
+- [x] Design `DatasetSource`, `RecordBatch`, `TransformPipeline` abstractions aligned with `nemora.core`.
+- [ ] Implement key connectors (BC FAIB, FIA, etc.), add CLI helpers, and unit/integration tests against sample raw datasets. *(FAIB fetch + manifest CLI landed; FIA helper + CLI shipping; next: fold FAIB manifest/stand-table into pipelines and expand integration coverage.)*
+- [x] Verify FTP access to FAIB PSP/non-PSP datasets and capture download instructions/DataLad strategy (caching helpers + env-gated integration test).
+- [x] Parse FAIB PSP/non-PSP data dictionaries (XLSX) and surface schema metadata for ingest docs/tests.
+- [ ] Flesh out FAIB ingest pipeline per `notes/ingest_pipeline_outline.md` (fetch, transform, output).
 
 5. **Sampling engine (`nemora.sampling`)**
    - [x] Catalogue existing sampling utilities (mixtures, truncated normals, etc.) and migrate next.
@@ -100,6 +100,6 @@ src/nemora/
 
 ## Next Steps
 
-1. Finalise `DatasetSource` / `TransformPipeline` interface proposal and circulate for feedback.
-2. Prototype sampling helpers (PDF→CDF inversion, bootstrap configuration) and capture design decisions.
-3. Draft ingest fixture plan (BC FAIB/FIA samples), including automated tests for PSP/non-PSP FTP downloads and data dictionary parsing.
+1. Port the HPS dataset prep script into a `TransformPipeline` and surface it through the ingest CLI.
+2. Introduce skip-by-default live download checks (FAIB + FIA) to watch for upstream schema drift.
+3. Draft ingest module API docs to sit alongside the how-to guide and keep module parity visible.

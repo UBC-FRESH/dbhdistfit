@@ -18,7 +18,8 @@ Status: In progress — stand-table aggregation, FTP fetch helper (with overwrit
    - ✅ FIA prototype helper aggregates `TREE`/`COND`/`PLOT` tables into stand tables (plot CN filter, DBH conversion).
    - ✅ Trimmed FIA fixtures (`tests/fixtures/fia/`) recorded for deterministic tests.
    - ✅ CLI supports `--fetch-state` to download state-specific tables before aggregation.
-   - [ ] Promote FIA download helper into a reusable `DatasetSource` fetcher once the interface is finalised.
+   - ✅ Promote FIA download helper into a reusable `DatasetSource` fetcher once the interface is finalised.
+   - ✅ Wrap FAIB manifest + stand-table flow in a `TransformPipeline` + CLI entry once abstractions stabilise.
 
 2. **Transform**
    - Join headers and sample metadata by `(CLSTR_ID, VISIT_NUMBER, PLOT)`.
@@ -34,6 +35,7 @@ Status: In progress — stand-table aggregation, FTP fetch helper (with overwrit
 
 - Unit tests covering join logic, DBH binning, and BAF subsampling using small CSV fixtures.
 - Integration test (optional skip) that downloads a tiny slice via FTP to ensure schema alignment (pending).
+- ✅ Add FAIB pipeline regression suite (manifest orchestration + stand-table checks) once pipeline is formalised.
 - CLI smoke test added for `nemora faib-manifest`; extend with end-to-end download once CI policy confirmed.
 - Add regression harness for FIA aggregation once trimmed fixtures are authored (TODO). ✅ basic coverage in `tests/test_ingest_fia.py`; extend with CLI once implemented.
 
@@ -41,3 +43,4 @@ Status: In progress — stand-table aggregation, FTP fetch helper (with overwrit
 
 - Expand `docs/howto/ingest.md` (updated with FAIB portal/FTP notes, `--overwrite`, and `--max-rows`; add full pipeline walkthrough once ETL lands).
 - Add CLI usage examples (`nemora ingest-faib --fetch --overwrite`) showing cache management (done).
+- ✅ Extend how-to coverage for FIA CLI workflows, DatasetSource usage, and caching strategy.

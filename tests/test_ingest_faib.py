@@ -1,4 +1,5 @@
 import os
+from collections.abc import Iterable
 from pathlib import Path
 
 import pandas as pd
@@ -10,6 +11,8 @@ from nemora.ingest.faib import (
     DataDictionary,
     aggregate_stand_table,
     auto_select_bafs,
+    build_faib_dataset_source,
+    build_faib_stand_table_pipeline,
     build_stand_table_from_csvs,
     download_faib_csvs,
     generate_faib_manifest,
@@ -131,6 +134,36 @@ def test_build_stand_table_from_csvs(tmp_path: Path) -> None:
     assert list(result["dbh_cm"]) == [12.0, 13.0, 25.0]
 
 
+def test_build_faib_stand_table_pipeline() -> None:
+    tree_detail = pd.DataFrame(
+        {
+            "CLSTR_ID": ["A", "A", "B"],
+            "VISIT_NUMBER": [1, 1, 1],
+            "PLOT": [1, 1, 1],
+            "DBH_CM": [12.0, 25.0, 14.0],
+            "TREE_EXP": [3.0, 2.0, 1.0],
+        }
+    )
+    plot_info = pd.DataFrame(
+        {
+            "CLSTR_ID": ["A", "B"],
+            "VISIT_NUMBER": [1, 1],
+            "PLOT": [1, 1],
+            "BAF": [12.0, 8.0],
+        }
+    )
+    pipeline = build_faib_stand_table_pipeline(
+        plot_info,
+        baf=12.0,
+        dbh_col="DBH_CM",
+        expansion_col="TREE_EXP",
+        baf_col="BAF",
+    )
+    result = pipeline.run(tree_detail)
+    assert list(result.columns) == ["dbh_cm", "tally"]
+    assert result["tally"].sum() == pytest.approx(5.0)
+
+
 def test_download_faib_csvs(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     files = ["faib_tree_detail.csv", "faib_sample_byvisit.csv", "readme.txt"]
     file_data = {
@@ -200,3 +233,40 @@ def test_generate_faib_manifest(tmp_path: Path) -> None:
     assert result.tables[0].exists()
     manifest = pd.read_csv(result.manifest_path)
     assert set(manifest.columns) == {"dataset", "baf", "rows", "path", "truncated"}
+
+
+def test_build_faib_dataset_source(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_download(
+        destination: Path,
+        dataset: str,
+        *,
+        overwrite: bool = False,
+        filenames: Iterable[str] | None = None,
+    ) -> list[Path]:
+        destination.mkdir(parents=True, exist_ok=True)
+        captured.update(
+            {
+                "destination": destination,
+                "dataset": dataset,
+                "overwrite": overwrite,
+                "filenames": filenames,
+            }
+        )
+        generated = destination / "faib_tree_detail.csv"
+        generated.write_text("CLSTR_ID,VISIT_NUMBER,PLOT,DBH_CM,TREE_EXP\n", encoding="utf-8")
+        return [generated]
+
+    monkeypatch.setattr("nemora.ingest.faib.download_faib_csvs", fake_download)
+
+    source = build_faib_dataset_source(
+        "psp",
+        destination=tmp_path / "data",
+        filenames=["faib_tree_detail.csv"],
+        overwrite=True,
+    )
+    files = list(source.fetch())
+    assert files and files[0].exists()
+    assert captured["dataset"] == "psp"
+    assert captured["overwrite"] is True

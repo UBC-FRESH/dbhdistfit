@@ -27,9 +27,11 @@ date, check `notes/nemora_modular_reorg_plan.md` for the latest detail.
   - [x] Provide bootstrap / Monte Carlo sampling utilities & tests.
   - [x] Integrate mixture helpers with distfit outputs.
 - `nemora.ingest`
-  - [ ] Design abstraction for raw inventory sources (`DatasetSource`, `TransformPipeline`).
+  - [x] Design abstraction for raw inventory sources (`DatasetSource`, `TransformPipeline`).
   - [ ] Port existing scripts (HPS dataset prep) into pipelines.
-  - [ ] Add CLI helpers for fetching / transforming reference datasets.
+  - [x] Add CLI helpers for fetching / transforming reference datasets.
+  - [x] Publish ingest how-to updates covering FAIB/FIA workflows.
+  - [x] Add regression coverage for FAIB manifest + pipeline orchestration.
 - `nemora.synthforest`
   - [ ] Define landscape/stem data models.
   - [ ] Implement stand attribute sampling, stem population generation.
@@ -61,8 +63,10 @@ date, check `notes/nemora_modular_reorg_plan.md` for the latest detail.
    - [x] Automate FAIB fetch → manifest → stand-table ETL flow (cache management, CLI integration test).
    - [x] Schedule FIA dataset scoping session once FAIB automation is stable (`notes/fia_ingest_scoping.md` drafted; HI sample downloaded to `data/external/fia/raw` for schema review).
    - [x] Trim FIA HI sample into test fixtures (`tests/fixtures/fia/`) and wire ingest tests to use them.
-   - [ ] Build FIA CLI/ETL workflow (state + filters) once fixtures/regression harness are in place.
-   - [ ] Expose FIA download helper via `DatasetSource` fetcher abstraction and integrate into ingest module planning.
+   - [x] Build FIA CLI/ETL workflow (state + filters) once fixtures/regression harness are in place.
+   - [x] Expose FIA download helper via `DatasetSource` fetcher abstraction and integrate into ingest module planning.
+   - [x] Document FIA CLI usage + caching guidance in `docs/howto/ingest.md`.
+   - [x] Promote FAIB pipeline into `TransformPipeline` implementation and add CLI entry point.
 2. **Sampling module prototypes**
    - [ ] Draft numeric/analytic PDF→CDF inversion helpers in notebooks.
    - [ ] Specify bootstrap/Monte Carlo API surface to align with distfit outputs.
