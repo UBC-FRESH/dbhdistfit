@@ -364,3 +364,20 @@ def test_build_faib_dataset_source(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
     assert files and files[0].exists()
     assert captured["dataset"] == "psp"
     assert captured["overwrite"] is True
+
+
+@pytest.mark.network
+@pytest.mark.skipif(
+    not os.environ.get("NEMORA_RUN_FAIB_INTEGRATION"),
+    reason="Set NEMORA_RUN_FAIB_INTEGRATION=1 to exercise live FAIB download.",
+)
+def test_build_faib_dataset_source_integration(tmp_path: Path) -> None:
+    dataset = build_faib_dataset_source(
+        "psp",
+        destination=tmp_path,
+        filenames=("faib_plot_header.csv", "faib_sample_byvisit.csv"),
+        overwrite=True,
+    )
+    files = list(dataset.fetch())
+    assert any(path.name == "faib_plot_header.csv" for path in files)
+    assert any(path.name == "faib_sample_byvisit.csv" for path in files)

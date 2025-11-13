@@ -4,6 +4,12 @@
 This script automates the steps described in ``docs/howto/hps_dataset.md``.
 It downloads (or consumes) the PSP metadata tables, filters them to the desired
 plot visits, and aggregates DBH tallies suitable for the HPS workflow demos.
+
+.. note::
+
+   The preferred workflow is now ``nemora ingest-faib-hps`` which wraps the same
+   ingest pipeline used here. This script delegates to that pipeline so existing
+   automation continues to work while notebook/CLI usage converges.
 """
 
 from __future__ import annotations
@@ -16,12 +22,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
-import pandas as pd
-
-from nemora.dataprep import (
+from nemora.ingest.faib import build_faib_dataset_source
+from nemora.ingest.hps import (
     SelectionCriteria,
-    aggregate_hps_tallies,
+    export_hps_outputs,
     load_plot_selections,
+    run_hps_pipeline,
 )
 
 DEFAULT_BASE_URL = "ftp://ftp.for.gov.bc.ca/HTS/external/!publish/ground_plot_compilations/psp"
@@ -106,6 +112,13 @@ def download_to_cache(
     return destination
 
 
+def _infer_filename(spec: str) -> str:
+    parsed = urlparse(spec)
+    if parsed.scheme:
+        return Path(parsed.path).name
+    return Path(spec).name
+
+
 def ensure_local_path(
     source: str,
     *,
@@ -125,33 +138,6 @@ def ensure_local_path(
     if not path.exists():
         raise FileNotFoundError(f"{source} does not exist and is not a recognised URL.")
     return str(path)
-
-
-def write_outputs(
-    tallies: dict[str, pd.DataFrame],
-    metadata: pd.DataFrame,
-    *,
-    output_dir: Path,
-    manifest_path: Path,
-    quiet: bool,
-) -> None:
-    """Persist per-plot tallies and manifest metadata."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-
-    for plot_id, frame in tallies.items():
-        destination = output_dir / f"{plot_id}.csv"
-        frame.to_csv(destination, index=False)
-        if not quiet:
-            print(f"[write] {destination}", file=sys.stderr)
-
-    manifest = metadata.copy()
-    manifest["measurement_date"] = manifest["measurement_date"].apply(
-        lambda value: value.isoformat() if value else ""
-    )
-    manifest.to_csv(manifest_path, index=False)
-    if not quiet:
-        print(f"[manifest] {manifest_path}", file=sys.stderr)
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -247,6 +233,27 @@ def main(argv: Sequence[str] | None = None) -> int:
     tree_detail_source = resolve_source(args.tree_detail, args.base_url)
 
     cache_dir = args.cache_dir
+
+    if not args.skip_download and args.base_url == DEFAULT_BASE_URL:
+        filenames = tuple(
+            _infer_filename(value)
+            for value in (plot_header_source, sample_byvisit_source, tree_detail_source)
+        )
+        dataset = build_faib_dataset_source(
+            "psp",
+            destination=cache_dir,
+            filenames=filenames,
+            overwrite=args.force,
+        )
+        try:
+            fetched = list(dataset.fetch())
+            if not args.quiet and fetched:
+                message = f"[fetch] Retrieved {len(fetched)} PSP files to {cache_dir}"
+                print(message, file=sys.stderr)
+        except Exception as exc:  # noqa: BLE001
+            warning = "[warn] FAIB dataset fetch failed; falling back to legacy download."
+            print(f"{warning} ({exc})", file=sys.stderr)
+
     plot_header_path = ensure_local_path(
         plot_header_source,
         cache_dir=cache_dir,
@@ -288,44 +295,47 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     status_codes = args.status_codes or ["L"]
 
-    tallies, metadata = aggregate_hps_tallies(
+    result = run_hps_pipeline(
         tree_detail_path,
         selections,
         dbh_column="DBH",
         status_column="LV_D",
-        live_status=status_codes,
+        live_status=tuple(status_codes),
         bin_width=args.bin_width,
         bin_origin=args.bin_origin,
         chunk_size=args.chunk_size,
         encoding=args.encoding,
     )
 
-    if metadata.empty:
+    manifest = result.manifest
+    if manifest.empty:
         print("Selected plots produced no tallies. Check filters or status codes.", file=sys.stderr)
         return 1
 
+    total_trees = int(manifest["trees"].sum()) if "trees" in manifest else 0
+
     if args.dry_run:
-        print(
-            f"[dry-run] {len(tallies)} plots would be written totaling "
-            f"{metadata['trees'].sum()} trees.",
-            file=sys.stderr,
+        dry_run_msg = (
+            f"[dry-run] {len(result.tallies)} plots would be written "
+            f"totaling {total_trees} trees."
         )
+        print(dry_run_msg, file=sys.stderr)
         return 0
 
     output_dir = args.output_dir
     manifest_path = args.manifest or (output_dir / "manifest.csv")
-    write_outputs(
-        tallies,
-        metadata,
+
+    export_hps_outputs(
+        result.tallies,
+        manifest,
         output_dir=output_dir,
         manifest_path=manifest_path,
         quiet=args.quiet,
     )
 
-    print(
-        f"Prepared {len(tallies)} plots with {metadata['trees'].sum()} live trees → {output_dir}",
-        file=sys.stderr if args.quiet else sys.stdout,
-    )
+    summary = f"Prepared {len(result.tallies)} plots with {total_trees} live trees → {output_dir}"
+    target_stream = sys.stderr if args.quiet else sys.stdout
+    print(summary, file=target_stream)
     return 0
 
 

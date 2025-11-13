@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -125,3 +126,19 @@ def test_build_fia_dataset_source(monkeypatch, tmp_path: Path) -> None:
     assert len(paths) == 1
     assert calls == [("HI", ("TREE",))]
     assert dataset.metadata["state"] == "HI"
+
+
+@pytest.mark.network
+@pytest.mark.skipif(
+    not os.environ.get("NEMORA_RUN_FIA_INTEGRATION"),
+    reason="Set NEMORA_RUN_FIA_INTEGRATION=1 to exercise live FIA download.",
+)
+def test_download_fia_tables_integration(tmp_path: Path) -> None:
+    files = download_fia_tables(
+        tmp_path,
+        state="hi",
+        tables=("PLOT",),
+        overwrite=True,
+    )
+    assert any(path.name == "HI_PLOT.csv" for path in files)
+    assert (tmp_path / "HI_PLOT.csv").exists()

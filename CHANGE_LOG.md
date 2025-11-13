@@ -156,4 +156,7 @@
 - Expanded `docs/howto/ingest.md` with DatasetSource usage examples, FAIB pipeline walkthroughs, and caching guidance covering both FAIB and FIA workflows.
 - Ported the HPS dataset preparation flow into `nemora.ingest.hps`, added an `ingest-faib-hps` CLI command, and wired helpers to persist tallies/manifest outputs through the ingest abstractions.
 - Added regression coverage for the new pipeline/dataset helpers and refreshed CLI fetch tests to exercise the abstractions.
+- Added skip-by-default live download checks for FAIB and FIA to catch upstream schema drift.
+- Authored an ingest API reference page and refreshed the roadmap notes/docs to surface the new module parity.
+- Updated `scripts/prepare_hps_dataset.py` to delegate to the shared ingest pipeline while retaining existing CLI compatibility.
 - Tests executed: `pytest tests/test_ingest_faib.py tests/test_cli.py::test_ingest_faib_command tests/test_cli.py::test_ingest_faib_command_with_fetch tests/test_cli.py::test_faib_manifest_command`.
